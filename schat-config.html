@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Chat — Configurações</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0a;
+    --bg-panel: #111111;
+    --bg-card: #181818;
+    --bg-input: #1e1e1e;
+    --orange-soft: #e8874a;
+    --orange-dim: #a0522830;
+    --text-primary: #f0ece6;
+    --text-secondary: #8a8178;
+    --text-muted: #4a4540;
+    --border: #242220;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* TEMA CLARO */
+  html.light body {
+    --bg-deep: #f0ece6;
+    --bg-panel: #ffffff;
+    --bg-card: #f5f1eb;
+    --bg-input: #ede9e3;
+    --text-primary: #1a1410;
+    --text-secondary: #6a6058;
+    --text-muted: #a09888;
+    --border: #ddd8d0;
+  }
+  body.light {
+    --bg-deep: #f0ece6;
+    --bg-panel: #ffffff;
+    --bg-card: #f5f1eb;
+    --bg-input: #ede9e3;
+    --text-primary: #1a1410;
+    --text-secondary: #6a6058;
+    --text-muted: #a09888;
+    --border: #ddd8d0;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, #1a0d0515 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 10% 80%, #150a0210 0%, transparent 50%);
+    pointer-events: none; transition: opacity 0.3s;
+  }
+  body.light::before { opacity: 0; }
+
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px; opacity: 0.3; pointer-events: none;
+  }
+
+  .status-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--orange-soft), transparent);
+    opacity: 0.4; z-index: 100;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; gap: 14px;
+    animation: appear 0.4s ease both; transition: background 0.3s, border-color 0.3s;
+  }
+
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: transparent; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-muted);
+    transition: background 0.2s, color 0.2s; flex-shrink: 0;
+    text-decoration: none;
+  }
+  .back-btn:hover { background: var(--bg-card); color: var(--text-secondary); }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+
+  .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+
+  .topbar-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px; font-weight: 700; color: var(--text-muted); letter-spacing: -0.3px;
+  }
+  .topbar-logo span { color: var(--orange-soft); }
+
+  /* CONTEÚDO */
+  .page-content {
+    flex: 1; display: flex; justify-content: center;
+    padding: 28px 16px 48px; position: relative; z-index: 1;
+    animation: page-in 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    animation-delay: 0.05s;
+  }
+
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .settings-wrap { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* SEÇÃO */
+  .section-card {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .section-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    transition: border-color 0.3s;
+  }
+
+  .section-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-icon svg { width: 15px; height: 15px; stroke: white; fill: none; }
+  .si-orange { background: linear-gradient(135deg, #e8874a, #c05820); }
+  .si-blue   { background: linear-gradient(135deg, #4a80c0, #2a5090); }
+  .si-green  { background: linear-gradient(135deg, #4a9e6a, #2d7a50); }
+  .si-purple { background: linear-gradient(135deg, #8a4ac0, #6030a0); }
+  .si-teal   { background: linear-gradient(135deg, #3ab0a0, #1a8070); }
+  .si-red    { background: linear-gradient(135deg, #c05050, #902020); }
+
+  .section-title-wrap { flex: 1; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .section-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  /* ITEM */
+  .setting-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s, border-color 0.3s;
+    cursor: default;
+  }
+  .setting-item:last-child { border-bottom: none; }
+  .setting-item.clickable { cursor: pointer; }
+  .setting-item.clickable:hover { background: var(--bg-card); }
+
+  .item-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--bg-input); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .item-icon svg { width: 16px; height: 16px; stroke: var(--text-muted); fill: none; }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-label { font-size: 14px; color: var(--text-primary); margin-bottom: 2px; }
+  .item-desc  { font-size: 12px; color: var(--text-muted); }
+
+  /* TOGGLE */
+  .toggle {
+    width: 44px; height: 26px; border-radius: 13px;
+    background: var(--bg-input); border: 1px solid var(--border);
+    position: relative; cursor: pointer; flex-shrink: 0;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .toggle.on { background: var(--orange-soft); border-color: var(--orange-soft); }
+
+  .toggle-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--text-muted); position: absolute;
+    top: 2px; left: 2px; transition: transform 0.25s, background 0.25s;
+  }
+  .toggle.on .toggle-thumb { transform: translateX(18px); background: white; }
+
+  /* SELECT */
+  .item-select {
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 10px; padding: 7px 10px;
+    font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text-primary);
+    outline: none; cursor: pointer; flex-shrink: 0;
+    transition: border-color 0.2s, background 0.3s;
+    max-width: 140px;
+  }
+  .item-select:focus { border-color: var(--orange-soft); }
+  .item-select option { background: var(--bg-panel); color: var(--text-primary); }
+
+  /* CHEVRON */
+  .chevron {
+    width: 16px; height: 16px; flex-shrink: 0;
+    stroke: var(--text-muted); fill: none;
+  }
+
+  /* PREVIEW TEMA */
+  .theme-preview {
+    display: flex; gap: 8px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+
+  .theme-opt {
+    flex: 1; border-radius: 12px; padding: 12px;
+    border: 2px solid var(--border); cursor: pointer;
+    transition: all 0.2s; display: flex; flex-direction: column; gap: 6px;
+    align-items: center;
+  }
+  .theme-opt.selected { border-color: var(--orange-soft); background: var(--orange-dim); }
+
+  .theme-thumb {
+    width: 100%; height: 44px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    overflow: hidden; position: relative;
+  }
+  .theme-thumb.dark-t { background: #0a0a0a; }
+  .theme-thumb.light-t { background: #f0ece6; }
+
+  .theme-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dark-t .theme-dot  { background: #e8874a; }
+  .light-t .theme-dot { background: #c05820; }
+
+  .theme-bar { height: 4px; border-radius: 2px; width: 60%; }
+  .dark-t .theme-bar  { background: #242220; }
+  .light-t .theme-bar { background: #ddd8d0; }
+
+  .theme-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+  /* FONTE TAMANHO — slider */
+  .font-slider-wrap {
+    padding: 10px 20px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+
+  .font-preview {
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .font-preview-bubble {
+    display: inline-block; background: var(--orange-dim);
+    border: 1px solid var(--orange-soft); border-radius: 12px 12px 12px 3px;
+    padding: 8px 12px; color: var(--text-primary); line-height: 1.4;
+    transition: font-size 0.2s;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-label-s { font-size: 11px; color: var(--text-muted); }
+  .slider-label-l { font-size: 15px; color: var(--text-muted); }
+
+  input[type="range"] {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--border); outline: none;
+    appearance: none; -webkit-appearance: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--orange-soft);
+    box-shadow: 0 0 0 3px var(--orange-dim);
+    cursor: pointer;
+  }
+
+  /* PAPEL DE PAREDE */
+  .wallpaper-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+
+  .wp-opt {
+    aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.2s, transform 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .wp-opt:hover { transform: scale(1.04); }
+  .wp-opt.selected { border-color: var(--orange-soft); }
+  .wp-opt.selected::after {
+    content: '✓';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: white;
+    background: #00000050;
+  }
+
+  /* LISTA DE CONTATOS BLOQUEADOS */
+  .blocked-list { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .blocked-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 8px; border-radius: 10px;
+    transition: background 0.15s; cursor: default;
+  }
+  .blocked-item:hover { background: var(--bg-card); }
+
+  .blocked-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; flex-shrink: 0;
+    color: white;
+  }
+
+  .blocked-name { flex: 1; font-size: 14px; color: var(--text-primary); }
+
+  .unblock-btn {
+    padding: 5px 12px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); font-family: 'Sora', sans-serif;
+    font-size: 12px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .unblock-btn:hover { border-color: var(--orange-soft); color: var(--orange-soft); background: var(--orange-dim); }
+
+  /* BARRA DE ARMAZENAMENTO */
+  .storage-bar-wrap { padding: 14px 20px; border-bottom: 1px solid var(--border); transition: border-color 0.3s; }
+  .storage-bar-track {
+    height: 6px; background: var(--bg-input); border-radius: 3px;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .storage-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--orange-soft), #c05820);
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .storage-labels {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--text-muted);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 20px;
+    font-size: 13px; color: var(--text-primary);
+    box-shadow: 0 8px 32px #00000060;
+    opacity: 0; transition: all 0.3s; z-index: 200;
+    white-space: nowrap; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .version-tag {
+    text-align: center; padding: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--text-muted); opacity: 0.4;
+  }
+
+  /* RESPONSIVO */
+  @media (max-width: 600px) {
+    .topbar { padding: 12px 16px; }
+    .page-content { padding: 18px 12px 40px; }
+    .setting-item { padding: 12px 16px; }
+    .section-header { padding: 12px 16px; }
+    .theme-preview { padding: 12px 16px; }
+    .wallpaper-grid { padding: 12px 16px; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .font-slider-wrap { padding: 10px 16px 16px; }
+    .storage-bar-wrap { padding: 12px 16px; }
+    .blocked-list { padding: 6px 8px; }
+  }
+</style>
+<script>
+  // Aplicar tema ANTES de renderizar (evita flash)
+  if (localStorage.getItem('schat-tema') !== 'dark')
+    document.documentElement.classList.add('light');
+</script>
+</head>
+<body id="body">
+
+<div class="grid-bg"></div>
+<div class="status-bar"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="schat-principal.html" class="back-btn" title="Voltar">
+    <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+  <div class="topbar-title">Configurações</div>
+  <div class="topbar-logo">S<span>-</span>Chat</div>
+</div>
+
+<div class="page-content">
+  <div class="settings-wrap">
+
+    <!-- ===== NOTIFICAÇÕES ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-orange">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8C18 6.4 17.4 4.8 16.2 3.6C15.1 2.4 13.6 1.8 12 1.8C10.4 1.8 8.9 2.4 7.8 3.6C6.6 4.8 6 6.4 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21C13.5 21.3 13.3 21.6 13 21.8C12.7 22 12.4 22.1 12 22.1C11.6 22.1 11.3 22 11 21.8C10.7 21.6 10.5 21.3 10.3 21" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Notificações</div>
+          <div class="section-sub">Sons, alertas e vibração</div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M11 5H6C4.9 5 4 5.9 4 7V18C4 19.1 4.9 20 6 20H17C18.1 20 19 19.1 19 18V13" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.5 2.5C18.3 1.7 19.7 1.7 20.5 2.5C21.3 3.3 21.3 4.7 20.5 5.5L12 14L8 15L9 11L17.5 2.5Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Notificações de mensagens</div>
+          <div class="item-desc">Receber alertas de novas mensagens</div>
+        </div>
+        <div class="toggle on" id="tog-msg" onclick="toggleSwitch('tog-msg', 'Notificações de mensagens')"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19 11,5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.1 4.9C20.9 6.7 22 9.2 22 12C22 14.8 20.9 17.3 19.1 19.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8.5C16.5 9.5 17 10.7 17 12C17 13.3 16.5 14.5 15.5 15.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Som das mensagens</div>
+          <div class="item-desc">Tocar som ao receber mensagem</div>
+        </div>
+        <div class="toggle on" id="tog-som" onclick="toggleSwitch('tog-som', 'Som das mensagens')"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6V12L16 14" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Vibração</div>
+          <div class="item-desc">Vibrar ao receber mensagem</div>
+        </div>
+        <div class="toggle" id="tog-vib" onclick="toggleSwitch('tog-vib', 'Vibração')"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 16.9V19.9C22 20.5 21.6 21.1 21 21.3C20.5 21.4 20 21.5 19.5 21.5C16.4 21.5 13.4 20.4 11 18.3C8.7 16.4 6.8 13.9 5.7 11C4.6 8.4 4.5 5.7 5.3 3C5.5 2.4 6.1 2 6.7 2H9.7C10.3 2 10.8 2.4 10.9 3C11.1 3.9 11.3 4.9 11.7 5.8C11.8 6.2 11.7 6.6 11.5 6.9L10.2 8.2C11.3 10.6 13.4 12.7 15.8 13.8L17.1 12.5C17.4 12.2 17.8 12.1 18.2 12.3C19.1 12.7 20.1 12.9 21 13.1C21.6 13.2 22 13.7 22 14.3V16.9Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Notificações de chamadas</div>
+          <div class="item-desc">Alertar para chamadas recebidas</div>
+        </div>
+        <div class="toggle on" id="tog-call" onclick="toggleSwitch('tog-call', 'Notificações de chamadas')"><div class="toggle-thumb"></div></div>
+      </div>
+
+    </div>
+
+    <!-- ===== PRIVACIDADE ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-blue">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 22C12 22 4 18 4 12V5L12 2L20 5V12C20 18 12 22 12 22Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Privacidade</div>
+          <div class="section-sub">Controle o que os outros veem</div>
+        </div>
+      </div>
+
+      <div class="setting-item clickable" onclick="abrirOpcoes('foto', ['Todos', 'Só contatos', 'Ninguém'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 21V19C20 16.8 18.2 15 16 15H8C5.8 15 4 16.8 4 19V21" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Foto de perfil</div>
+          <div class="item-desc" id="val-foto">Todos podem ver</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="setting-item clickable" onclick="abrirOpcoes('status', ['Todos', 'Só contatos', 'Ninguém'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1V3M12 21V23M4.2 4.2L5.6 5.6M18.4 18.4L19.8 19.8M1 12H3M21 12H23M4.2 19.8L5.6 18.4M18.4 5.6L19.8 4.2" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Status online</div>
+          <div class="item-desc" id="val-status">Todos podem ver</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- NOVO: Último acesso -->
+      <div class="setting-item clickable" onclick="abrirOpcoes('acesso', ['Todos', 'Só contatos', 'Ninguém'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><polyline points="12,6 12,12 16,14" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Último acesso</div>
+          <div class="item-desc" id="val-acesso">Só contatos</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- NOVO: Grupos -->
+      <div class="setting-item clickable" onclick="abrirOpcoes('grupos', ['Todos', 'Só contatos', 'Ninguém'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21V19C17 16.8 15.2 15 13 15H5C2.8 15 1 16.8 1 19V21" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 21V19C23 17.1 21.7 15.5 20 15.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.1C17.7 3.5 19 5.1 19 7C19 8.9 17.7 10.5 16 10.9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Grupos</div>
+          <div class="item-desc" id="val-grupos">Só contatos podem adicionar</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- NOVO: Chamadas -->
+      <div class="setting-item clickable" onclick="abrirOpcoes('chamadas', ['Todos', 'Só contatos', 'Ninguém'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 16.9V19.9C22 20.5 21.6 21.1 21 21.3C20.5 21.4 20 21.5 19.5 21.5C16.4 21.5 13.4 20.4 11 18.3C8.7 16.4 6.8 13.9 5.7 11C4.6 8.4 4.5 5.7 5.3 3C5.5 2.4 6.1 2 6.7 2H9.7C10.3 2 10.8 2.4 10.9 3C11.1 3.9 11.3 4.9 11.7 5.8C11.8 6.2 11.7 6.6 11.5 6.9L10.2 8.2C11.3 10.6 13.4 12.7 15.8 13.8L17.1 12.5C17.4 12.2 17.8 12.1 18.2 12.3C19.1 12.7 20.1 12.9 21 13.1C21.6 13.2 22 13.7 22 14.3V16.9Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Chamadas</div>
+          <div class="item-desc" id="val-chamadas">Só contatos podem ligar</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="setting-item clickable" onclick="abrirOpcoes('leitura', ['Ativado', 'Desativado'])">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="20,6 9,17 4,12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Confirmação de leitura</div>
+          <div class="item-desc" id="val-leitura">Ativado</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21V19C17 16.8 15.2 15 13 15H5C2.8 15 1 16.8 1 19V21" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="8" r="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 21V19C23 17.1 21.7 15.5 20 15.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.1C17.7 3.5 19 5.1 19 7C19 8.9 17.7 10.5 16 10.9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Bloquear desconhecidos</div>
+          <div class="item-desc">Não receber msgs de quem não é contato</div>
+        </div>
+        <div class="toggle" id="tog-bloq" onclick="toggleSwitch('tog-bloq', 'Bloquear desconhecidos')"><div class="toggle-thumb"></div></div>
+      </div>
+
+    </div>
+
+    <!-- ===== CONVERSAS (NOVO) ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-teal">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15C21 15.5 20.8 16 20.4 16.4C20 16.8 19.5 17 19 17H7L3 21V5C3 4.5 3.2 4 3.6 3.6C4 3.2 4.5 3 5 3H19C19.5 3 20 3.2 20.4 3.6C20.8 4 21 4.5 21 5V15Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Conversas</div>
+          <div class="section-sub">Aparência e backup do chat</div>
+        </div>
+      </div>
+
+      <!-- Tamanho da fonte -->
+      <div class="font-slider-wrap">
+        <div class="item-info" style="margin-bottom:10px">
+          <div class="item-label" style="font-size:14px;color:var(--text-primary)">Tamanho da fonte</div>
+          <div class="item-desc">Ajuste o tamanho do texto nas conversas</div>
+        </div>
+        <div class="font-preview">
+          <div class="font-preview-bubble" id="font-preview-text" style="font-size:14px">
+            Olá! Como você está? 👋
+          </div>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label-s">A</span>
+          <input type="range" id="font-slider" min="12" max="20" value="14" oninput="ajustarFonte(this.value)">
+          <span class="slider-label-l">A</span>
+        </div>
+      </div>
+
+      <!-- Papel de parede -->
+      <div class="section-header" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 20px;">
+        <div class="item-info">
+          <div class="item-label" style="font-size:14px;color:var(--text-primary)">Papel de parede do chat</div>
+          <div class="item-desc">Fundo das suas conversas</div>
+        </div>
+      </div>
+      <div class="wallpaper-grid" id="wallpaper-grid">
+        <div class="wp-opt selected" data-wp="none" onclick="selecionarWallpaper(this, 'Sem papel de parede')" style="background:var(--bg-deep);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg>
+        </div>
+        <div class="wp-opt" data-wp="grid" onclick="selecionarWallpaper(this, 'Grade')" style="background:repeating-linear-gradient(0deg,transparent,transparent 10px,#e8874a12 10px,#e8874a12 11px),repeating-linear-gradient(90deg,transparent,transparent 10px,#e8874a12 10px,#e8874a12 11px),var(--bg-deep)"></div>
+        <div class="wp-opt" data-wp="dots" onclick="selecionarWallpaper(this, 'Pontos')" style="background:radial-gradient(circle,#e8874a22 1px,transparent 1px) 0 0/14px 14px,var(--bg-deep)"></div>
+        <div class="wp-opt" data-wp="waves" onclick="selecionarWallpaper(this, 'Gradiente quente')" style="background:linear-gradient(135deg,#1a0808,#2a1005,#0a0a0a)"></div>
+        <div class="wp-opt" data-wp="cool" onclick="selecionarWallpaper(this, 'Gradiente frio')" style="background:linear-gradient(135deg,#081018,#051522,#0a0a0a)"></div>
+        <div class="wp-opt" data-wp="forest" onclick="selecionarWallpaper(this, 'Verde floresta')" style="background:linear-gradient(135deg,#081408,#0d2010,#0a0a0a)"></div>
+        <div class="wp-opt" data-wp="purple" onclick="selecionarWallpaper(this, 'Roxo')" style="background:linear-gradient(135deg,#120820,#1a0a30,#0a0a0a)"></div>
+        <div class="wp-opt" data-wp="custom" onclick="mostrarToast('Em breve: escolha sua própria foto 📷')" style="background:var(--bg-input);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+
+      <!-- Backup -->
+      <div class="setting-item clickable" onclick="simularBackup()">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="23,4 23,10 17,10" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5 15C19.2 18.5 15.9 21 12 21C7 21 3 17 3 12C3 7 7 3 12 3C15.9 3 19.2 5.5 20.5 9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Fazer backup agora</div>
+          <div class="item-desc" id="backup-desc">Último backup: nunca</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="14" y="3" width="7" height="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="14" width="7" height="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="14" y="14" width="7" height="7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Backup automático</div>
+          <div class="item-desc">Salvar conversas automaticamente</div>
+        </div>
+        <div class="toggle on" id="tog-backup" onclick="toggleSwitch('tog-backup', 'Backup automático')"><div class="toggle-thumb"></div></div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15V19C21 19.5 20.8 20 20.4 20.4C20 20.8 19.5 21 19 21H5C4.5 21 4 20.8 3.6 20.4C3.2 20 3 19.5 3 19V15" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17,8 12,3 7,8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Incluir mídias no backup</div>
+          <div class="item-desc">Fotos, vídeos e áudios</div>
+        </div>
+        <div class="toggle" id="tog-midia" onclick="toggleSwitch('tog-midia', 'Mídias no backup')"><div class="toggle-thumb"></div></div>
+      </div>
+
+    </div>
+
+    <!-- ===== SILENCIAR / BLOQUEADOS (NOVO) ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-red">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1" stroke-linecap="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Silenciados e Bloqueados</div>
+          <div class="section-sub">Gerencie quem você silenciou ou bloqueou</div>
+        </div>
+      </div>
+
+      <!-- Contatos silenciados -->
+      <div class="setting-item clickable" onclick="expandirSilenciados()" style="border-bottom:1px solid var(--border)">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19 11,5" stroke-linecap="round" stroke-linejoin="round"/><line x1="23" y1="9" x2="17" y2="15" stroke-linecap="round"/><line x1="17" y1="9" x2="23" y2="15" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Contatos silenciados</div>
+          <div class="item-desc" id="silenciados-count">2 contatos silenciados</div>
+        </div>
+        <svg class="chevron" id="chevron-sil" viewBox="0 0 24 24" stroke-width="2" style="transition:transform 0.25s"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div id="silenciados-list" style="display:none;border-bottom:1px solid var(--border)">
+        <div class="blocked-list">
+          <div class="blocked-item">
+            <div class="blocked-avatar" style="background:#4a80c0">MC</div>
+            <div class="blocked-name">Marcos Costa</div>
+            <button class="unblock-btn" onclick="removerSilencio(this, 'Marcos Costa')">Reativar</button>
+          </div>
+          <div class="blocked-item">
+            <div class="blocked-avatar" style="background:#8a4ac0">PL</div>
+            <div class="blocked-name">Pedro Lima</div>
+            <button class="unblock-btn" onclick="removerSilencio(this, 'Pedro Lima')">Reativar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contatos bloqueados -->
+      <div class="setting-item clickable" onclick="expandirBloqueados()">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Contatos bloqueados</div>
+          <div class="item-desc" id="bloqueados-count">1 contato bloqueado</div>
+        </div>
+        <svg class="chevron" id="chevron-blq" viewBox="0 0 24 24" stroke-width="2" style="transition:transform 0.25s"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div id="bloqueados-list" style="display:none">
+        <div class="blocked-list">
+          <div class="blocked-item" id="blocked-jj">
+            <div class="blocked-avatar" style="background:#c05050">JJ</div>
+            <div class="blocked-name">João Júnior</div>
+            <button class="unblock-btn" onclick="desbloquear('blocked-jj', 'João Júnior')">Desbloquear</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== APARÊNCIA ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-purple">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 1V3M12 21V23M4.2 4.2L5.6 5.6M18.4 18.4L19.8 19.8M1 12H3M21 12H23M4.2 19.8L5.6 18.4M18.4 5.6L19.8 4.2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Aparência</div>
+          <div class="section-sub">Tema e visual do app</div>
+        </div>
+      </div>
+
+      <div class="theme-preview">
+        <div class="theme-opt selected" id="opt-dark" onclick="setTema('dark')">
+          <div class="theme-thumb dark-t"><div class="theme-dot"></div><div class="theme-bar"></div></div>
+          <div class="theme-label">Escuro</div>
+        </div>
+        <div class="theme-opt" id="opt-light" onclick="setTema('light')">
+          <div class="theme-thumb light-t"><div class="theme-dot"></div><div class="theme-bar"></div></div>
+          <div class="theme-label">Claro</div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 8V5M16 19V16M8 12H5M19 12H16M6.3 6.3L8.5 8.5M15.5 15.5L17.7 17.7M17.7 6.3L15.5 8.5M8.5 15.5L6.3 17.7" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Seguir tema do sistema</div>
+          <div class="item-desc">Adaptar automaticamente ao dispositivo</div>
+        </div>
+        <div class="toggle" id="tog-sys" onclick="toggleSwitch('tog-sys', 'Seguir tema do sistema')"><div class="toggle-thumb"></div></div>
+      </div>
+
+    </div>
+
+    <!-- ===== IDIOMA ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon si-green">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12H22M12 2C9.3 7 8 9.4 8 12C8 14.6 9.3 17 12 22C14.7 17 16 14.6 16 12C16 9.4 14.7 7 12 2Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Idioma</div>
+          <div class="section-sub">Idioma do aplicativo</div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M4 5H20M4 12H14M4 19H10" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Idioma do app</div>
+          <div class="item-desc">Idioma da interface</div>
+        </div>
+        <select class="item-select" onchange="mostrarToast('Idioma alterado para ' + this.options[this.selectedIndex].text)">
+          <option value="pt-BR">🇧🇷 Português</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="de">🇩🇪 Deutsch</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="2" x2="16" y2="6" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke-linecap="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Formato de data</div>
+          <div class="item-desc">Como as datas são exibidas</div>
+        </div>
+        <select class="item-select" onchange="mostrarToast('Formato de data atualizado')">
+          <option>DD/MM/AAAA</option>
+          <option>MM/DD/AAAA</option>
+          <option>AAAA-MM-DD</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- ===== SOBRE ===== -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--bg-input);border:1px solid var(--border)">
+          <svg viewBox="0 0 24 24" stroke-width="1.8" style="stroke:var(--text-muted)"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round" stroke-width="2"/></svg>
+        </div>
+        <div class="section-title-wrap">
+          <div class="section-title">Sobre</div>
+          <div class="section-sub">Informações do app</div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Versão do S-Chat</div>
+          <div class="item-desc">v0.1 — desenvolvimento</div>
+        </div>
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted)">v0.1</span>
+      </div>
+
+      <div class="setting-item clickable" onclick="mostrarToast('Nenhuma atualização disponível ✓')">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="23,4 23,10 17,10" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5 15C19.2 18.5 15.9 21 12 21C7 21 3 17 3 12C3 7 7 3 12 3C15.9 3 19.2 5.5 20.5 9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Verificar atualizações</div>
+          <div class="item-desc">Checar nova versão disponível</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="setting-item clickable" onclick="mostrarToast('Abrindo termos de uso...')">
+        <div class="item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14,2 14,8 20,8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="item-info">
+          <div class="item-label">Termos de uso</div>
+          <div class="item-desc">Política de privacidade e termos</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+    </div>
+
+    <div class="version-tag">S-Chat v0.1 — dev</div>
+
+  </div>
+</div>
+
+<!-- Modal de opções (bottom sheet) -->
+<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:#00000070;z-index:150;align-items:flex-end;justify-content:center;" onclick="fecharModal()">
+  <div id="modalBox" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:560px;" onclick="event.stopPropagation()">
+    <div id="modalTitle" style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;"></div>
+    <div id="modalOpts"></div>
+  </div>
+</div>
+
+<style>
+  #modalOverlay { display: none; }
+  #modalOverlay.open { display: flex; }
+  #modalBox { animation: slide-up 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+</style>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let modalCampo = null;
+
+  // ---- Toggle ----
+  function toggleSwitch(id, label) {
+    const tog = document.getElementById(id);
+    const isOn = tog.classList.toggle('on');
+    mostrarToast(label + ': ' + (isOn ? 'Ativado ✓' : 'Desativado'));
+  }
+
+  // ---- Tema ----
+  function setTema(tema) {
+    localStorage.setItem('schat-tema', tema);
+    if (tema === 'light') {
+      document.documentElement.classList.add('light');
+      document.getElementById('opt-dark').classList.remove('selected');
+      document.getElementById('opt-light').classList.add('selected');
+      mostrarToast('Tema claro ativado ☀️');
+    } else {
+      document.documentElement.classList.remove('light');
+      document.getElementById('opt-dark').classList.add('selected');
+      document.getElementById('opt-light').classList.remove('selected');
+      mostrarToast('Tema escuro ativado 🌙');
+    }
+  }
+
+  // Carregar tema salvo ao abrir a página (padrão: claro)
+  (function() {
+    const tema = localStorage.getItem('schat-tema');
+    if (tema === 'dark') {
+      document.getElementById('opt-dark').classList.add('selected');
+      document.getElementById('opt-light').classList.remove('selected');
+    } else {
+      document.getElementById('opt-dark').classList.remove('selected');
+      document.getElementById('opt-light').classList.add('selected');
+    }
+  })();
+
+  // ---- Fonte ----
+  function ajustarFonte(val) {
+    document.getElementById('font-preview-text').style.fontSize = val + 'px';
+    mostrarToast('Fonte: ' + val + 'px');
+  }
+
+  // ---- Wallpaper ----
+  function selecionarWallpaper(el, nome) {
+    document.querySelectorAll('.wp-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    mostrarToast('Papel de parede: ' + nome);
+  }
+
+  // ---- Backup ----
+  function simularBackup() {
+    const desc = document.getElementById('backup-desc');
+    desc.textContent = 'Fazendo backup...';
+    mostrarToast('Iniciando backup... ⏳');
+    setTimeout(() => {
+      const agora = new Date();
+      const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      desc.textContent = 'Último backup: hoje às ' + hora;
+      mostrarToast('Backup concluído com sucesso ✓');
+    }, 2200);
+  }
+
+  // ---- Silenciados ----
+  let silOpen = false;
+  function expandirSilenciados() {
+    const list = document.getElementById('silenciados-list');
+    const chevron = document.getElementById('chevron-sil');
+    silOpen = !silOpen;
+    list.style.display = silOpen ? 'block' : 'none';
+    chevron.style.transform = silOpen ? 'rotate(90deg)' : '';
+  }
+
+  function removerSilencio(btn, nome) {
+    const item = btn.closest('.blocked-item');
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(20px)';
+    item.style.transition = 'all 0.3s';
+    setTimeout(() => {
+      item.remove();
+      atualizarContadorSilenciados();
+    }, 300);
+    mostrarToast(nome + ' foi reativado ✓');
+  }
+
+  function atualizarContadorSilenciados() {
+    const items = document.querySelectorAll('#silenciados-list .blocked-item');
+    const count = items.length;
+    document.getElementById('silenciados-count').textContent =
+      count === 0 ? 'Nenhum contato silenciado' : count + ' contato' + (count > 1 ? 's' : '') + ' silenciado' + (count > 1 ? 's' : '');
+  }
+
+  // ---- Bloqueados ----
+  let blqOpen = false;
+  function expandirBloqueados() {
+    const list = document.getElementById('bloqueados-list');
+    const chevron = document.getElementById('chevron-blq');
+    blqOpen = !blqOpen;
+    list.style.display = blqOpen ? 'block' : 'none';
+    chevron.style.transform = blqOpen ? 'rotate(90deg)' : '';
+  }
+
+  function desbloquear(itemId, nome) {
+    const item = document.getElementById(itemId);
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(20px)';
+    item.style.transition = 'all 0.3s';
+    setTimeout(() => {
+      item.remove();
+      const items = document.querySelectorAll('#bloqueados-list .blocked-item');
+      const count = items.length;
+      document.getElementById('bloqueados-count').textContent =
+        count === 0 ? 'Nenhum contato bloqueado' : count + ' contato' + (count > 1 ? 's' : '') + ' bloqueado' + (count > 1 ? 's' : '');
+    }, 300);
+    mostrarToast(nome + ' foi desbloqueado ✓');
+  }
+
+  // ---- Modal de opções ----
+  const labelsModal = {
+    foto: 'Foto de perfil',
+    status: 'Status online',
+    acesso: 'Último acesso',
+    grupos: 'Grupos',
+    chamadas: 'Chamadas',
+    leitura: 'Confirmação de leitura'
+  };
+
+  const valoresDisplay = {
+    'Todos': 'Todos podem ver',
+    'Só contatos': 'Só contatos',
+    'Ninguém': 'Ninguém pode ver',
+    'Ativado': 'Ativado',
+    'Desativado': 'Desativado'
+  };
+
+  function abrirOpcoes(campo, opcoes) {
+    modalCampo = campo;
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').textContent = labelsModal[campo] || campo;
+    const opts = document.getElementById('modalOpts');
+    opts.innerHTML = '';
+
+    opcoes.forEach(op => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `width:100%;padding:13px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:12px;color:var(--text-primary);font-family:'Sora',sans-serif;font-size:14px;cursor:pointer;margin-bottom:8px;text-align:left;transition:background 0.2s;`;
+      btn.textContent = op;
+      btn.onmouseover = () => btn.style.background = 'var(--bg-card)';
+      btn.onmouseout  = () => btn.style.background = 'var(--bg-input)';
+      btn.onclick = () => {
+        const el = document.getElementById('val-' + campo);
+        if (el) el.textContent = valoresDisplay[op] || op;
+        fecharModal();
+        mostrarToast('Alterado para: ' + op + ' ✓');
+      };
+      opts.appendChild(btn);
+    });
+
+    const cancel = document.createElement('button');
+    cancel.style.cssText = `width:100%;padding:13px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--text-muted);font-family:'Sora',sans-serif;font-size:14px;cursor:pointer;margin-top:4px;`;
+    cancel.textContent = 'Cancelar';
+    cancel.onclick = fecharModal;
+    opts.appendChild(cancel);
+
+    overlay.classList.add('open');
+  }
+
+  function fecharModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  // ---- Toast ----
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+
+</body>
+</html>

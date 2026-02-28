@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Chat — Recuperar Senha</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0a; --bg-panel: #111111; --bg-card: #181818;
+    --bg-input: #1e1e1e; --orange-soft: #e8874a; --orange-dim: #a0522840;
+    --text-primary: #f0ece6; --text-secondary: #8a8178; --text-muted: #4a4540;
+    --border: #242220; --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; }
+  .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.35; pointer-events: none; }
+  .glow { position: fixed; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, #e8874a06 0%, transparent 70%); left: 50%; top: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+  .status-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--orange-soft), transparent); opacity: 0.4; }
+  .card { position: relative; z-index: 10; width: 440px; max-width: calc(100vw - 32px); background: var(--bg-panel); border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; box-shadow: 0 40px 80px #00000060; animation: appear 0.5s cubic-bezier(0.16,1,0.3,1) both; margin: 16px; }
+  @keyframes appear { from { opacity:0; transform: translateY(20px) scale(0.98); } to { opacity:1; transform: translateY(0) scale(1); } }
+
+  .steps { display: flex; align-items: flex-start; gap: 0; margin-bottom: 36px; }
+  .step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; position: relative; }
+  .step-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid var(--border); background: var(--bg-card); color: var(--text-muted); transition: all 0.3s; flex-shrink: 0; }
+  .step.active .step-dot { border-color: var(--orange-soft); background: var(--orange-dim); color: var(--orange-soft); }
+  .step.done .step-dot { border-color: #4a9e6a; background: #0d1f0d; color: #4a9e6a; }
+  .step-label { font-size: 10px; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+  .step.active .step-label { color: var(--orange-soft); }
+  .step.done .step-label { color: #4a9e6a; }
+  .step:not(:last-child)::after { content: ''; position: absolute; top: 16px; left: calc(50% + 16px); right: calc(-50% + 16px); height: 2px; background: var(--border); }
+  .step.done::after { background: #4a9e6a30; }
+
+  .form-header { margin-bottom: 28px; }
+  .form-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .form-header p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; font-weight: 300; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .input-wrap { position: relative; }
+  .input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--text-muted); fill: none; pointer-events: none; }
+  input[type=text], input[type=email], input[type=password] { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 14px 42px; font-family: 'Sora', sans-serif; font-size: 15px; color: var(--text-primary); outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+  input::placeholder { color: var(--text-muted); }
+  input:focus { border-color: var(--orange-soft); box-shadow: 0 0 0 3px var(--orange-dim); }
+
+  .otp-grid { display: flex; gap: 10px; }
+  .otp-input { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; padding: 16px 4px; text-align: center; font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text-primary); outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; width: 52px; }
+  .otp-input:focus { border-color: var(--orange-soft); box-shadow: 0 0 0 3px var(--orange-dim); }
+  .otp-input.filled { border-color: #4a9e6a40; background: #0a180a; color: #4a9e6a; }
+  .resend-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--text-secondary); flex-wrap: wrap; }
+  .resend-btn { color: var(--orange-soft); background: none; border: none; font-family: 'Sora', sans-serif; font-size: 13px; cursor: pointer; padding: 0; }
+  .resend-btn:disabled { color: var(--text-muted); cursor: default; }
+  .timer-display { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--orange-soft); }
+
+  .strength-bar { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; margin-top: 8px; }
+  .strength-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.3s, background 0.3s; }
+  .strength-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+  .btn-main { width: 100%; padding: 15px; border: none; border-radius: var(--radius); background: linear-gradient(135deg, #e8874a, #c05820); color: white; font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 20px #e8874a25; }
+  .btn-main:hover { transform: translateY(-1px); box-shadow: 0 8px 28px #e8874a35; }
+  .btn-main:active { transform: scale(0.98); }
+  .btn-main:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+  .btn-success { background: linear-gradient(135deg, #4a9e6a, #2d7a50) !important; box-shadow: 0 4px 20px #4a9e6a25 !important; }
+  .back-link { display: flex; align-items: center; gap: 6px; margin-top: 18px; justify-content: center; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+  .back-link:hover { color: var(--text-primary); }
+  .back-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+  .email-sent-icon { width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 20px; background: linear-gradient(135deg, #1a0d05, #120808); border: 1px solid #e8874a20; display: flex; align-items: center; justify-content: center; animation: icon-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+  @keyframes icon-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .email-sent-icon svg { width: 28px; height: 28px; stroke: var(--orange-soft); fill: none; }
+  .email-highlight { color: var(--orange-soft); font-weight: 500; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; font-size: 13px; color: var(--text-primary); box-shadow: 0 12px 40px #00000060; z-index: 200; transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .version-tag { position: fixed; bottom: 14px; right: 18px; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); opacity: 0.4; }
+  html.light body { --bg-deep: #f0ece6; --bg-panel: #ffffff; --bg-card: #f5f1eb; --bg-input: #ede9e3; --text-primary: #1a1410; --text-secondary: #6a6058; --text-muted: #a09888; --border: #ddd8d0; }
+  .etapa { display: none; }
+  .etapa.ativa { display: block; animation: appear 0.35s ease both; }
+
+  @media (max-width: 500px) { .card { padding: 32px 24px; } .otp-input { font-size: 18px; padding: 14px 2px; } }
+</style>
+<script> if (localStorage.getItem('schat-tema') !== 'dark') document.documentElement.classList.add('light'); </script>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow"></div>
+<div class="status-bar"></div>
+
+<div class="card">
+  <!-- Etapas -->
+  <div class="steps">
+    <div class="step active" id="dot1"><div class="step-dot" id="dotIcon1">1</div><div class="step-label">E-mail</div></div>
+    <div class="step" id="dot2"><div class="step-dot" id="dotIcon2">2</div><div class="step-label">Código</div></div>
+    <div class="step" id="dot3"><div class="step-dot" id="dotIcon3">3</div><div class="step-label">Nova senha</div></div>
+  </div>
+
+  <!-- Etapa 1 -->
+  <div class="etapa ativa" id="etapa1">
+    <div class="form-header">
+      <h2>Recuperar senha</h2>
+      <p>Informe o e-mail da sua conta. Enviaremos um código de verificação em 6 dígitos.</p>
+    </div>
+    <div class="form-group">
+      <label for="emailRecup">E-mail cadastrado</label>
+      <div class="input-wrap">
+        <input type="email" id="emailRecup" placeholder="seu@email.com" autocomplete="email">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke-linecap="round"/><polyline points="22,6 12,13 2,6" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <button class="btn-main" id="btnEnviar" onclick="enviarCodigo()">Enviar código de verificação</button>
+    <a href="schat-login.html" class="back-link">
+      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round"/></svg>
+      Voltar para o login
+    </a>
+  </div>
+
+  <!-- Etapa 2 -->
+  <div class="etapa" id="etapa2">
+    <div class="email-sent-icon">
+      <svg viewBox="0 0 24 24" stroke-width="1.6"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round"/></svg>
+    </div>
+    <div class="form-header" style="text-align:center">
+      <h2>Código enviado!</h2>
+      <p>Digite o código de 6 dígitos enviado para <span class="email-highlight" id="emailExibido"></span></p>
+    </div>
+    <div class="form-group">
+      <label style="text-align:center;display:block">Código de verificação</label>
+      <div class="otp-grid">
+        <input class="otp-input" id="otp0" maxlength="1" oninput="otpNext(this,0)" onkeydown="otpBack(event,this,0)" inputmode="numeric">
+        <input class="otp-input" id="otp1" maxlength="1" oninput="otpNext(this,1)" onkeydown="otpBack(event,this,1)" inputmode="numeric">
+        <input class="otp-input" id="otp2" maxlength="1" oninput="otpNext(this,2)" onkeydown="otpBack(event,this,2)" inputmode="numeric">
+        <input class="otp-input" id="otp3" maxlength="1" oninput="otpNext(this,3)" onkeydown="otpBack(event,this,3)" inputmode="numeric">
+        <input class="otp-input" id="otp4" maxlength="1" oninput="otpNext(this,4)" onkeydown="otpBack(event,this,4)" inputmode="numeric">
+        <input class="otp-input" id="otp5" maxlength="1" oninput="otpNext(this,5)" onkeydown="otpBack(event,this,5)" inputmode="numeric">
+      </div>
+      <div class="resend-row">
+        <span>Não recebeu?</span>
+        <button class="resend-btn" id="resendBtn" onclick="reenviarCodigo()" disabled>Reenviar</button>
+        <span class="timer-display" id="timerDisplay"></span>
+      </div>
+    </div>
+    <button class="btn-main" id="btnVerificar" onclick="verificarCodigo()" disabled>Verificar código</button>
+    <a href="#" class="back-link" onclick="voltarEtapa1();return false">
+      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round"/></svg>
+      Usar outro e-mail
+    </a>
+  </div>
+
+  <!-- Etapa 3 -->
+  <div class="etapa" id="etapa3">
+    <div class="form-header">
+      <h2>Criar nova senha</h2>
+      <p>Identidade verificada com sucesso. Escolha uma senha forte para proteger sua conta.</p>
+    </div>
+    <div class="form-group">
+      <label for="novaSenha">Nova senha</label>
+      <div class="input-wrap">
+        <input type="password" id="novaSenha" placeholder="Mínimo 8 caracteres" oninput="checarForca(this.value)">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" stroke-linecap="round"/><path d="M7 11V7C7 4.24 9.24 2 12 2C14.76 2 17 4.24 17 7V11" stroke-linecap="round"/></svg>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      <div class="strength-label" id="strengthLabel">Digite sua senha</div>
+    </div>
+    <div class="form-group">
+      <label for="confirmarSenha">Confirmar senha</label>
+      <div class="input-wrap">
+        <input type="password" id="confirmarSenha" placeholder="Repita a nova senha">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 12L11 14L15 10M21 12C21 16.97 12 22 12 22S3 16.97 3 12V5L12 2L21 5V12Z" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <button class="btn-main" id="btnSalvar" onclick="salvarSenha()">Salvar nova senha</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="version-tag">S-Chat v0.1 — dev</div>
+
+<script>
+  let emailAtual = '', timerInterval = null;
+
+  function mostrarToast(msg, cor) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.borderColor = cor||'';
+    t.classList.add('show'); clearTimeout(t._t);
+    t._t = setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  function irEtapa(de, para) {
+    document.getElementById('etapa'+de).classList.remove('ativa');
+    document.getElementById('etapa'+para).classList.add('ativa');
+  }
+
+  function marcarDone(n) {
+    const d = document.getElementById('dot'+n);
+    d.classList.remove('active'); d.classList.add('done');
+    document.getElementById('dotIcon'+n).textContent = '✓';
+  }
+
+  function marcarActive(n) {
+    document.getElementById('dot'+n).classList.add('active');
+  }
+
+  function enviarCodigo() {
+    const email = document.getElementById('emailRecup').value.trim();
+    if (!email || !email.includes('@')) { mostrarToast('⚠️ Informe um e-mail válido', '#c05050'); return; }
+    emailAtual = email;
+    const btn = document.getElementById('btnEnviar');
+    btn.textContent = 'Enviando...'; btn.disabled = true;
+    setTimeout(() => {
+      document.getElementById('emailExibido').textContent = email;
+      marcarDone(1); marcarActive(2);
+      irEtapa(1, 2); iniciarTimer();
+      document.getElementById('otp0').focus();
+    }, 1200);
+  }
+
+  function iniciarTimer() {
+    let seg = 30;
+    const timerEl = document.getElementById('timerDisplay');
+    const btn = document.getElementById('resendBtn');
+    clearInterval(timerInterval); btn.disabled = true;
+    timerEl.textContent = 'em 0:30';
+    timerInterval = setInterval(() => {
+      seg--;
+      timerEl.textContent = seg > 0 ? 'em 0:'+seg.toString().padStart(2,'0') : '';
+      if (seg <= 0) { clearInterval(timerInterval); btn.disabled = false; }
+    }, 1000);
+  }
+
+  function reenviarCodigo() { iniciarTimer(); mostrarToast('📧 Código reenviado!', 'var(--orange-soft)'); }
+
+  function otpNext(el, idx) {
+    el.value = el.value.replace(/\D/g,'').slice(0,1);
+    if (el.value) el.classList.add('filled'); else el.classList.remove('filled');
+    if (el.value && idx < 5) document.getElementById('otp'+(idx+1)).focus();
+    const todos = [0,1,2,3,4,5].map(i=>document.getElementById('otp'+i));
+    document.getElementById('btnVerificar').disabled = !todos.every(i=>i.value.length===1);
+  }
+
+  function otpBack(e, el, idx) {
+    if (e.key === 'Backspace' && !el.value && idx > 0) document.getElementById('otp'+(idx-1)).focus();
+  }
+
+  function verificarCodigo() {
+    const btn = document.getElementById('btnVerificar');
+    btn.textContent = 'Verificando...'; btn.disabled = true;
+    setTimeout(() => {
+      marcarDone(2); marcarActive(3);
+      irEtapa(2, 3);
+      document.getElementById('novaSenha').focus();
+    }, 1000);
+  }
+
+  function voltarEtapa1() {
+    irEtapa(2, 1);
+    document.getElementById('dot2').classList.remove('active');
+    document.getElementById('dot1').classList.remove('done'); document.getElementById('dot1').classList.add('active');
+    document.getElementById('dotIcon1').textContent = '1';
+    const btn = document.getElementById('btnEnviar');
+    btn.textContent = 'Enviar código de verificação'; btn.disabled = false;
+    clearInterval(timerInterval);
+  }
+
+  function checarForca(senha) {
+    let f = 0;
+    if (senha.length >= 8) f++;
+    if (/[A-Z]/.test(senha)) f++;
+    if (/[0-9]/.test(senha)) f++;
+    if (/[^A-Za-z0-9]/.test(senha)) f++;
+    const cfg = [{pct:'0%',cor:'',txt:'Digite sua senha'},{pct:'25%',cor:'#c05050',txt:'Fraca'},{pct:'50%',cor:'#c09030',txt:'Razoável'},{pct:'75%',cor:'var(--orange-soft)',txt:'Boa'},{pct:'100%',cor:'#4a9e6a',txt:'Forte ✓'}];
+    const c = cfg[f];
+    const fill = document.getElementById('strengthFill');
+    fill.style.width = c.pct; fill.style.background = c.cor||'';
+    const lbl = document.getElementById('strengthLabel');
+    lbl.textContent = c.txt; lbl.style.color = c.cor||'var(--text-muted)';
+  }
+
+  function salvarSenha() {
+    const nova = document.getElementById('novaSenha').value;
+    const conf = document.getElementById('confirmarSenha').value;
+    if (nova.length < 8) { mostrarToast('⚠️ Senha deve ter ao menos 8 caracteres', '#c05050'); return; }
+    if (nova !== conf) { mostrarToast('⚠️ As senhas não coincidem', '#c05050'); return; }
+    const btn = document.getElementById('btnSalvar');
+    btn.textContent = 'Salvando...'; btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ Senha redefinida com sucesso!';
+      btn.classList.add('btn-success');
+      marcarDone(3);
+      mostrarToast('🎉 Redirecionando para o login...', '#4a9e6a');
+      setTimeout(() => window.location.href = 'schat-login.html', 2000);
+    }, 1200);
+  }
+</script>
+</body>
+</html>

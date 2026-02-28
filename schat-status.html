@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Chat — Status</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0a; --bg-panel: #111111; --bg-card: #181818;
+    --bg-input: #1e1e1e; --orange-soft: #e8874a; --orange-dim: #a0522840;
+    --text-primary: #f0ece6; --text-secondary: #8a8178; --text-muted: #4a4540;
+    --border: #242220; --radius: 14px; --green-online: #4caf7d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+  .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.25; pointer-events: none; }
+  .status-bar-top { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--orange-soft), transparent); opacity: 0.4; z-index: 100; }
+
+  .topbar { position: sticky; top: 0; z-index: 50; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 14px; }
+  .back-btn { width: 36px; height: 36px; border-radius: 10px; background: transparent; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); text-decoration: none; transition: all 0.2s; flex-shrink: 0; }
+  .back-btn:hover { background: var(--bg-card); color: var(--text-secondary); }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+  .topbar-info { flex: 1; }
+  .topbar-title { font-size: 16px; font-weight: 600; }
+  .topbar-sub { font-size: 11px; color: var(--text-muted); }
+  .btn-novo-status { padding: 8px 16px; border-radius: 10px; background: linear-gradient(135deg, #e8874a, #c05820); border: none; color: white; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.15s; white-space: nowrap; }
+  .btn-novo-status:hover { transform: scale(1.03); }
+
+  /* Barra de perfis (meu status + outros) */
+  .profiles-bar { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; overflow-x: auto; background: var(--bg-panel); }
+  .profiles-bar::-webkit-scrollbar { height: 3px; }
+  .profiles-bar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .profile-bubble { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; }
+  .profile-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; position: relative; }
+  .profile-ring.has-status { background: linear-gradient(135deg, #e8874a, #c05820); }
+  .profile-ring.mine { background: var(--bg-card); border: 2px dashed var(--border); }
+  .profile-ring.viewed { background: var(--text-muted); }
+  .profile-av { width: 100%; height: 100%; border-radius: 50%; background: var(--bg-panel); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; border: 2px solid var(--bg-panel); }
+  .profile-av.c1 { background: #1a0e08; color: #e8874a; }
+  .profile-av.c2 { background: #081a10; color: #4a9e6a; }
+  .profile-av.c3 { background: #08101a; color: #4a80c0; }
+  .profile-av.c4 { background: #1a0814; color: #c04a8a; }
+  .profile-av.c5 { background: #141a08; color: #8ac04a; }
+  .profile-add { background: var(--bg-input); color: var(--text-muted); font-size: 22px; }
+  .profile-name { font-size: 11px; color: var(--text-secondary); max-width: 56px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .profile-name.mine { color: var(--orange-soft); }
+
+  /* Feed principal */
+  .feed { flex: 1; max-width: 600px; width: 100%; margin: 0 auto; padding: 16px 20px 60px; position: relative; z-index: 1; }
+
+  /* Card de status */
+  .status-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; transition: border-color 0.2s; animation: card-in 0.3s ease both; }
+  .status-card:hover { border-color: #3a3530; }
+  @keyframes card-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .status-header { padding: 14px 16px 10px; display: flex; align-items: center; gap: 10px; }
+  .status-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; border: 2px solid var(--orange-soft); flex-shrink: 0; }
+  .status-av.mine { border-color: var(--orange-soft); }
+  .status-author { flex: 1; }
+  .status-author-name { font-size: 14px; font-weight: 600; margin-bottom: 1px; }
+  .status-author-time { font-size: 11px; color: var(--text-muted); }
+  .status-menu { width: 30px; height: 30px; border-radius: 8px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+  .status-menu:hover { background: var(--bg-card); }
+  .status-menu svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+
+  /* Mood bar */
+  .mood-bar { height: 3px; width: 100%; margin-bottom: 4px; }
+
+  /* Conteúdo do status */
+  .status-body { padding: 0 16px 14px; }
+  .status-text { font-size: 15px; line-height: 1.7; color: var(--text-primary); margin-bottom: 10px; }
+  .status-text blockquote { font-style: italic; border-left: 3px solid var(--orange-soft); padding-left: 12px; color: var(--text-secondary); }
+
+  /* Tags de humor */
+  .status-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .status-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid; }
+
+  /* Mídia no status */
+  .status-media { border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+  .status-media-placeholder { padding: 24px; background: var(--bg-card); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
+  .status-media-placeholder span { font-size: 32px; }
+  .status-media-placeholder p { font-size: 12px; color: var(--text-muted); }
+
+  /* Footer do status */
+  .status-footer { padding: 10px 16px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 0; }
+  .status-action { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0; cursor: pointer; border-radius: 8px; transition: background 0.15s; font-size: 13px; color: var(--text-muted); }
+  .status-action:hover { background: var(--bg-card); color: var(--text-secondary); }
+  .status-action svg { width: 15px; height: 15px; stroke: currentColor; fill: none; }
+  .status-action.liked { color: #c04a8a; }
+  .status-action.liked svg { fill: #c04a8a; stroke: #c04a8a; }
+
+  /* Visualizações */
+  .views-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); padding: 0 6px; }
+  .views-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; }
+
+  /* Composer */
+  .composer { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 20px; }
+  .composer-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .composer-av { width: 36px; height: 36px; border-radius: 50%; background: #1a0e08; color: #e8874a; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .composer-name { font-size: 13px; font-weight: 500; }
+  .composer-input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'Sora', sans-serif; font-size: 14px; color: var(--text-primary); resize: none; outline: none; min-height: 80px; transition: border-color 0.2s; margin-bottom: 12px; }
+  .composer-input::placeholder { color: var(--text-muted); }
+  .composer-input:focus { border-color: var(--orange-soft); }
+  .composer-bottom { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mood-picker { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .mood-opt { padding: 5px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); transition: all 0.15s; white-space: nowrap; }
+  .mood-opt:hover, .mood-opt.selected { border-color: var(--orange-soft); background: var(--orange-dim); color: var(--orange-soft); }
+  .char-count { font-size: 11px; color: var(--text-muted); }
+  .char-count.warn { color: #c05050; }
+  .composer-actions { display: flex; gap: 8px; width: 100%; justify-content: flex-end; margin-top: 8px; }
+  .btn-cancelar { padding: 9px 16px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); font-family: 'Sora', sans-serif; font-size: 13px; cursor: pointer; }
+  .btn-publicar { padding: 9px 20px; border-radius: 10px; background: linear-gradient(135deg, #e8874a, #c05820); border: none; color: white; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.15s; }
+  .btn-publicar:hover { transform: scale(1.02); }
+  .btn-publicar:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+  /* Seção label */
+  .feed-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; }
+
+  /* ===================== STORIES VIEWER ===================== */
+  .story-viewer {
+    position: fixed; inset: 0; z-index: 500;
+    background: #000;
+    display: none; flex-direction: column;
+    animation: story-in 0.25s cubic-bezier(0.16,1,0.3,1);
+  }
+  .story-viewer.open { display: flex; }
+  @keyframes story-in {
+    from { opacity:0; transform: scale(0.97); }
+    to   { opacity:1; transform: scale(1); }
+  }
+
+  .story-progress-bar {
+    display: flex; gap: 4px; padding: 14px 16px 0;
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  }
+  .story-seg {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.3); overflow: hidden;
+  }
+  .story-seg-fill {
+    height: 100%; background: white;
+    width: 0%; transition: none;
+  }
+  .story-seg-fill.active {
+    animation: story-progress var(--story-duration, 5s) linear forwards;
+  }
+  .story-seg-fill.done { width: 100%; }
+  @keyframes story-progress { from{width:0%} to{width:100%} }
+
+  .story-header {
+    position: absolute; top: 24px; left: 0; right: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; z-index: 10;
+  }
+  .story-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; border: 2px solid white;
+    flex-shrink: 0;
+  }
+  .story-name { font-size: 14px; font-weight: 600; color: white; flex: 1; }
+  .story-time { font-size: 11px; color: rgba(255,255,255,0.7); }
+  .story-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: white; font-size: 16px; transition: background 0.15s;
+  }
+  .story-close:hover { background: rgba(255,255,255,0.25); }
+
+  .story-content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 80px 24px 100px; position: relative;
+    cursor: pointer;
+  }
+  .story-tap-left {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 40%;
+    cursor: pointer;
+  }
+  .story-tap-right {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 40%;
+    cursor: pointer;
+  }
+
+  .story-text-card {
+    background: linear-gradient(135deg, #1a0d08, #120808);
+    border: 1px solid #e8874a20;
+    border-radius: 20px; padding: 28px 24px;
+    max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px #00000060;
+  }
+  .story-text-emoji { font-size: 48px; margin-bottom: 14px; }
+  .story-text-content { font-size: 18px; line-height: 1.6; color: white; font-weight: 500; }
+  .story-text-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .story-text-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+
+  .story-footer {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 16px; display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(transparent, #00000080);
+  }
+  .story-reply-input {
+    flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 24px; padding: 10px 16px;
+    font-family: 'Sora', sans-serif; font-size: 14px; color: white;
+    outline: none;
+  }
+  .story-reply-input::placeholder { color: rgba(255,255,255,0.5); }
+  .story-emoji-row { display: flex; gap: 6px; }
+  .story-emoji-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; transition: transform 0.15s, background 0.15s;
+  }
+  .story-emoji-btn:hover { transform: scale(1.2); background: rgba(255,255,255,0.2); }
+
+  .story-views-overlay {
+    position: absolute; bottom: 70px; left: 16px;
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+  }
+  .story-views-overlay svg { width: 13px; height: 13px; stroke: currentColor; fill: none; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; font-size: 13px; z-index: 300; transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  html.light body { --bg-deep: #f0ece6; --bg-panel: #ffffff; --bg-card: #f5f1eb; --bg-input: #ede9e3; --text-primary: #1a1410; --text-secondary: #6a6058; --text-muted: #a09888; --border: #ddd8d0; }
+  @media (max-width: 500px) { .topbar { padding: 14px 16px; } .feed { padding: 12px 12px 60px; } .profiles-bar { padding: 14px 16px; } }
+</style>
+<script> if (localStorage.getItem('schat-tema') !== 'dark') document.documentElement.classList.add('light'); </script>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="status-bar-top"></div>
+
+<div class="topbar">
+  <a href="schat-principal.html" class="back-btn">
+    <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round"/></svg>
+  </a>
+  <div class="topbar-info">
+    <div class="topbar-title">Status</div>
+    <div class="topbar-sub">Mini-blog pessoal dos seus contatos</div>
+  </div>
+  <button class="btn-novo-status" onclick="abrirComposer()">+ Novo</button>
+</div>
+
+<!-- Barra de perfis -->
+<div class="profiles-bar">
+  <div class="profile-bubble" onclick="abrirComposer()">
+    <div class="profile-ring mine">
+      <div class="profile-av profile-add c1">EU</div>
+    </div>
+    <div class="profile-name mine">Meu status</div>
+  </div>
+  <div class="profile-bubble" onclick="verStatusContato('Ana Lima')">
+    <div class="profile-ring has-status">
+      <div class="profile-av c1">AL</div>
+    </div>
+    <div class="profile-name">Ana</div>
+  </div>
+  <div class="profile-bubble" onclick="verStatusContato('Carlos Souza')">
+    <div class="profile-ring has-status">
+      <div class="profile-av c2">CS</div>
+    </div>
+    <div class="profile-name">Carlos</div>
+  </div>
+  <div class="profile-bubble">
+    <div class="profile-ring has-status" style="background:linear-gradient(135deg,#4a80c0,#2a5090)">
+      <div class="profile-av c4">BR</div>
+    </div>
+    <div class="profile-name">Beatriz</div>
+  </div>
+  <div class="profile-bubble">
+    <div class="profile-ring viewed">
+      <div class="profile-av c3">DM</div>
+    </div>
+    <div class="profile-name">Diego</div>
+  </div>
+  <div class="profile-bubble">
+    <div class="profile-ring has-status" style="background:linear-gradient(135deg,#8ac04a,#4a8020)">
+      <div class="profile-av c5">FC</div>
+    </div>
+    <div class="profile-name">Fernanda</div>
+  </div>
+</div>
+
+<div class="feed">
+
+  <!-- Composer oculto inicialmente -->
+  <div class="composer" id="composer" style="display:none">
+    <div class="composer-header">
+      <div class="composer-av">EU</div>
+      <div class="composer-name">Você · Agora</div>
+    </div>
+    <textarea class="composer-input" id="composerInput" placeholder="O que está passando pela sua cabeça? 💭" maxlength="280" oninput="atualizarComposer()"></textarea>
+    <div class="composer-bottom">
+      <div class="mood-picker" id="moodPicker">
+        <div class="mood-opt" onclick="toggleMood(this,'😊 Feliz','#e8874a')">😊 Feliz</div>
+        <div class="mood-opt" onclick="toggleMood(this,'🤔 Pensativo','#4a80c0')">🤔 Pensativo</div>
+        <div class="mood-opt" onclick="toggleMood(this,'🔥 Motivado','#c05820')">🔥 Motivado</div>
+        <div class="mood-opt" onclick="toggleMood(this,'😴 Cansado','#6060a0')">😴 Cansado</div>
+        <div class="mood-opt" onclick="toggleMood(this,'🎵 Musical','#4a9e6a')">🎵 Musical</div>
+        <div class="mood-opt" onclick="toggleMood(this,'📚 Estudando','#c09030')">📚 Estudando</div>
+      </div>
+      <div class="char-count" id="charCount">0/280</div>
+    </div>
+    <div class="composer-actions">
+      <button class="btn-cancelar" onclick="fecharComposer()">Cancelar</button>
+      <button class="btn-publicar" id="btnPublicar" onclick="publicarStatus()" disabled>Publicar</button>
+    </div>
+  </div>
+
+  <!-- Meus status -->
+  <div class="feed-label" id="meuLabel" style="display:none">Meu status</div>
+  <div id="meusStatus"></div>
+
+  <!-- Status dos contatos -->
+  <div class="feed-label">Seus contatos</div>
+
+  <!-- Ana Lima -->
+  <div class="status-card" style="animation-delay:0.05s">
+    <div class="mood-bar" style="background:linear-gradient(90deg,#e8874a,#c05820)"></div>
+    <div class="status-header">
+      <div class="status-av c1">AL</div>
+      <div class="status-author">
+        <div class="status-author-name">Ana Lima</div>
+        <div class="status-author-time">há 2 horas</div>
+      </div>
+      <button class="status-menu"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></button>
+    </div>
+    <div class="status-body">
+      <div class="status-tags">
+        <div class="status-tag" style="color:#e8874a;border-color:#e8874a30;background:#e8874a10">🎵 Musical</div>
+      </div>
+      <div class="status-text">Descobrindo novas músicas enquanto codifico... às vezes a melhor produtividade vem com os headphones certos. 🎵<br><br>Alguém tem recomendações de lo-fi ou jazz para focar?</div>
+    </div>
+    <div class="status-footer">
+      <div class="status-action" onclick="curtirStatus(this)" title="Curtir">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round"/></svg>
+        <span>8</span>
+      </div>
+      <div class="status-action" onclick="comentarStatus('Ana Lima')" title="Comentar">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round"/></svg>
+        <span>3</span>
+      </div>
+      <div class="status-action" title="Responder">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round"/></svg>
+        <span>Responder</span>
+      </div>
+      <div class="views-badge">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        42
+      </div>
+    </div>
+  </div>
+
+  <!-- Carlos Souza -->
+  <div class="status-card" style="animation-delay:0.1s">
+    <div class="mood-bar" style="background:linear-gradient(90deg,#4a9e6a,#2d7a50)"></div>
+    <div class="status-header">
+      <div class="status-av c2">CS</div>
+      <div class="status-author">
+        <div class="status-author-name">Carlos Souza</div>
+        <div class="status-author-time">há 4 horas</div>
+      </div>
+      <button class="status-menu"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></button>
+    </div>
+    <div class="status-body">
+      <div class="status-tags">
+        <div class="status-tag" style="color:#4a9e6a;border-color:#4a9e6a30;background:#4a9e6a10">🔥 Motivado</div>
+      </div>
+      <div class="status-text">Finalmente terminei o projeto que estava me tirando o sono por 3 semanas. 🎉<br><br>
+        <blockquote>"Persistência e foco superam talento. Todo dia."</blockquote>
+      </div>
+      <div class="status-media">
+        <div class="status-media-placeholder">
+          <span>🏆</span>
+          <p>Foto do projeto finalizado • 2,4MB</p>
+        </div>
+      </div>
+    </div>
+    <div class="status-footer">
+      <div class="status-action liked" onclick="curtirStatus(this)" title="Curtir">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round"/></svg>
+        <span>15</span>
+      </div>
+      <div class="status-action" onclick="comentarStatus('Carlos Souza')">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round"/></svg>
+        <span>7</span>
+      </div>
+      <div class="status-action">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round"/></svg>
+        <span>Responder</span>
+      </div>
+      <div class="views-badge">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        89
+      </div>
+    </div>
+  </div>
+
+  <!-- Beatriz -->
+  <div class="status-card" style="animation-delay:0.15s">
+    <div class="mood-bar" style="background:linear-gradient(90deg,#4a80c0,#2a5090)"></div>
+    <div class="status-header">
+      <div class="status-av c4">BR</div>
+      <div class="status-author">
+        <div class="status-author-name">Beatriz Ramos</div>
+        <div class="status-author-time">há 6 horas</div>
+      </div>
+      <button class="status-menu"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></button>
+    </div>
+    <div class="status-body">
+      <div class="status-tags">
+        <div class="status-tag" style="color:#4a80c0;border-color:#4a80c030;background:#4a80c010">🤔 Pensativo</div>
+        <div class="status-tag" style="color:#c09030;border-color:#c0903030;background:#c0903010">📚 Estudando</div>
+      </div>
+      <div class="status-text">Estudando UX Research e percebo o quanto pequenos detalhes na interface fazem diferença enorme na experiência do usuário. É quase filosófico — design não é sobre como as coisas parecem, é sobre como elas funcionam. 💭</div>
+    </div>
+    <div class="status-footer">
+      <div class="status-action" onclick="curtirStatus(this)">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round"/></svg>
+        <span>11</span>
+      </div>
+      <div class="status-action" onclick="comentarStatus('Beatriz Ramos')">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round"/></svg>
+        <span>5</span>
+      </div>
+      <div class="status-action">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round"/></svg>
+        <span>Responder</span>
+      </div>
+      <div class="views-badge">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        34
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let moodSelecionado = null;
+
+  function mostrarToast(msg, cor) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.borderColor = cor||'';
+    t.classList.add('show'); clearTimeout(t._t);
+    t._t = setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  function abrirComposer() {
+    const c = document.getElementById('composer');
+    c.style.display = 'block';
+    c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('composerInput').focus();
+  }
+
+  function fecharComposer() {
+    document.getElementById('composer').style.display = 'none';
+    document.getElementById('composerInput').value = '';
+    document.getElementById('charCount').textContent = '0/280';
+    document.getElementById('charCount').classList.remove('warn');
+    document.getElementById('btnPublicar').disabled = true;
+    moodSelecionado = null;
+    document.querySelectorAll('.mood-opt').forEach(m => m.classList.remove('selected'));
+  }
+
+  function atualizarComposer() {
+    const v = document.getElementById('composerInput').value;
+    const cc = document.getElementById('charCount');
+    cc.textContent = v.length + '/280';
+    cc.classList.toggle('warn', v.length > 240);
+    document.getElementById('btnPublicar').disabled = v.trim().length === 0;
+  }
+
+  function toggleMood(el, mood, cor) {
+    if (el.classList.contains('selected')) {
+      el.classList.remove('selected');
+      moodSelecionado = null;
+    } else {
+      document.querySelectorAll('.mood-opt').forEach(m => m.classList.remove('selected'));
+      el.classList.add('selected');
+      moodSelecionado = { texto: mood, cor };
+    }
+  }
+
+  function publicarStatus() {
+    const texto = document.getElementById('composerInput').value.trim();
+    if (!texto) return;
+    const btn = document.getElementById('btnPublicar');
+    btn.textContent = 'Publicando...'; btn.disabled = true;
+
+    setTimeout(() => {
+      // Criar card de status
+      const hora = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      const card = document.createElement('div');
+      card.className = 'status-card';
+      const moodHtml = moodSelecionado ? `<div class="status-tags"><div class="status-tag" style="color:${moodSelecionado.cor};border-color:${moodSelecionado.cor}30;background:${moodSelecionado.cor}10">${moodSelecionado.texto}</div></div>` : '';
+      card.innerHTML = `
+        <div class="mood-bar" style="background:linear-gradient(90deg,${moodSelecionado?.cor||'var(--orange-soft)'},${moodSelecionado?.cor||'#c05820'})"></div>
+        <div class="status-header">
+          <div class="status-av c1">EU</div>
+          <div class="status-author">
+            <div class="status-author-name">Você</div>
+            <div class="status-author-time">agora às ${hora}</div>
+          </div>
+          <button class="status-menu" onclick="deletarStatus(this)"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></button>
+        </div>
+        <div class="status-body">${moodHtml}<div class="status-text">${texto.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>
+        <div class="status-footer">
+          <div class="status-action" onclick="curtirStatus(this)"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round"/></svg><span>0</span></div>
+          <div class="views-badge"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>1</div>
+        </div>`;
+
+      const meusContainer = document.getElementById('meusStatus');
+      const label = document.getElementById('meuLabel');
+      label.style.display = '';
+      meusContainer.insertBefore(card, meusContainer.firstChild);
+      fecharComposer();
+      mostrarToast('✓ Status publicado!', 'var(--orange-soft)');
+    }, 800);
+  }
+
+  function curtirStatus(el) {
+    el.classList.toggle('liked');
+    const num = el.querySelector('span');
+    let v = parseInt(num.textContent);
+    num.textContent = el.classList.contains('liked') ? v+1 : v-1;
+  }
+
+  function comentarStatus(nome) {
+    mostrarToast('💬 Abrindo conversa com ' + nome, 'var(--orange-soft)');
+    setTimeout(() => window.location.href = 'schat-principal.html', 1200);
+  }
+
+  const storiesData = {
+    'Ana Lima': [
+      { emoji: '🌅', text: 'Que manhã linda! Começando o dia com energia positiva ✨', tags: ['#BomDia', '#Energia'], color: 'linear-gradient(135deg,#e8874a,#c05820)', time: '14:22' },
+      { emoji: '☕', text: 'Café da tarde com aquele bolo de limão 🍋', tags: ['#CafeDaTarde'], color: 'linear-gradient(135deg,#c05820,#8a3010)', time: '16:45' }
+    ],
+    'Carlos Souza': [
+      { emoji: '⚽', text: 'Jogo hoje à noite! Vai ser incrível 🏟️', tags: ['#Futebol', '#Noite'], color: 'linear-gradient(135deg,#4a9e6a,#2d7a50)', time: '13:10' }
+    ],
+    'Beatriz Ramos': [
+      { emoji: '📚', text: 'Terminei de ler aquele livro incrível que eu recomendei para vocês. Vale muito a pena! 10/10', tags: ['#Leitura', '#Recomendo'], color: 'linear-gradient(135deg,#c04a8a,#902060)', time: '11:45' }
+    ]
+  };
+
+  let storyAtual = { contato: null, index: 0 };
+  let storyInterval = null;
+
+  function verStatusContato(nome) {
+    const stories = storiesData[nome];
+    if (!stories || stories.length === 0) {
+      mostrarToast('👤 ' + nome + ' não tem status recente', 'var(--text-secondary)');
+      return;
+    }
+    storyAtual = { contato: nome, index: 0 };
+    abrirStory(nome, 0);
+  }
+
+  function abrirStory(nome, idx) {
+    const stories = storiesData[nome];
+    if (!stories || idx >= stories.length) {
+      fecharStory(); return;
+    }
+    const story = stories[idx];
+    storyAtual = { contato: nome, index: idx };
+
+    // Setar conteúdo
+    document.getElementById('storyName').textContent = nome;
+    document.getElementById('storyTime').textContent = story.time;
+    document.getElementById('storyEmoji').textContent = story.emoji;
+    document.getElementById('storyText').textContent = story.text;
+    document.getElementById('storyContent').style.background = story.color;
+
+    // Tags
+    const tagsEl = document.getElementById('storyTags');
+    tagsEl.innerHTML = (story.tags || []).map(t => `<span class="story-text-tag">${t}</span>`).join('');
+
+    // Iniciais do avatar
+    const iniciais = nome.split(' ').map(n=>n[0]).join('').slice(0,2);
+    document.getElementById('storyAvatar').textContent = iniciais;
+
+    // Progress bars
+    const prog = document.getElementById('storyProgress');
+    prog.innerHTML = stories.map((_, i) =>
+      `<div class="story-seg"><div class="story-seg-fill ${i < idx ? 'done' : i === idx ? 'active' : ''}" style="--story-duration:5s"></div></div>`
+    ).join('');
+
+    document.getElementById('storyViewer').classList.add('open');
+
+    // Auto avançar
+    clearInterval(storyInterval);
+    storyInterval = setTimeout(() => {
+      proximoStory();
+    }, 5000);
+  }
+
+  function proximoStory() {
+    const stories = storiesData[storyAtual.contato];
+    if (storyAtual.index + 1 < stories.length) {
+      abrirStory(storyAtual.contato, storyAtual.index + 1);
+    } else {
+      fecharStory();
+    }
+  }
+
+  function anteriorStory() {
+    if (storyAtual.index > 0) {
+      abrirStory(storyAtual.contato, storyAtual.index - 1);
+    }
+  }
+
+  function fecharStory() {
+    clearInterval(storyInterval);
+    const v = document.getElementById('storyViewer');
+    v.style.animation = 'story-in 0.2s cubic-bezier(0.16,1,0.3,1) reverse both';
+    setTimeout(() => {
+      v.classList.remove('open');
+      v.style.animation = '';
+    }, 200);
+  }
+
+  function reagirStory(emoji) {
+    mostrarToast(emoji + ' Reação enviada para ' + storyAtual.contato, 'var(--orange-soft)');
+    clearInterval(storyInterval);
+    storyInterval = setTimeout(() => proximoStory(), 2000);
+  }
+
+  function deletarStatus(btn) {
+    const card = btn.closest('.status-card');
+    card.style.transition = 'opacity 0.3s, transform 0.3s';
+    card.style.opacity = '0'; card.style.transform = 'translateX(20px)';
+    setTimeout(() => card.remove(), 300);
+    mostrarToast('Status removido', 'var(--text-muted)');
+  }
+</script>
+<!-- ========== STORY VIEWER ========== -->
+<div class="story-viewer" id="storyViewer">
+  <div class="story-progress-bar" id="storyProgress"></div>
+
+  <div class="story-header">
+    <div class="story-avatar c1" id="storyAvatar">AL</div>
+    <div>
+      <div class="story-name" id="storyName">Ana Lima</div>
+      <div class="story-time" id="storyTime">14:22</div>
+    </div>
+    <button class="story-close" onclick="fecharStory()">✕</button>
+  </div>
+
+  <div class="story-content" id="storyContent" style="background:linear-gradient(135deg,#e8874a,#c05820)">
+    <div class="story-tap-left" onclick="anteriorStory()"></div>
+    <div class="story-tap-right" onclick="proximoStory()"></div>
+    <div class="story-text-card">
+      <div class="story-text-emoji" id="storyEmoji">🌅</div>
+      <div class="story-text-content" id="storyText">Carregando...</div>
+      <div class="story-text-tags" id="storyTags"></div>
+    </div>
+  </div>
+
+  <div class="story-views-overlay">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-linecap="round"/><circle cx="12" cy="12" r="3"/></svg>
+    <span id="storyViews">127 visualizações</span>
+  </div>
+
+  <div class="story-footer">
+    <input class="story-reply-input" placeholder="Responder ao status..." onkeydown="if(event.key==='Enter'){reagirStory('💬');this.value=''}">
+    <div class="story-emoji-row">
+      <div class="story-emoji-btn" onclick="reagirStory('❤️')">❤️</div>
+      <div class="story-emoji-btn" onclick="reagirStory('🔥')">🔥</div>
+      <div class="story-emoji-btn" onclick="reagirStory('😮')">😮</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

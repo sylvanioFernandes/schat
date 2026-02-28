@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Chat — Criar Grupo</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0a; --bg-panel: #111111; --bg-card: #181818;
+    --bg-input: #1e1e1e; --orange-soft: #e8874a; --orange-dim: #a0522840;
+    --text-primary: #f0ece6; --text-secondary: #8a8178; --text-muted: #4a4540;
+    --border: #242220; --radius: 14px; --green-online: #4caf7d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 60% at 70% 20%, #1a0d0515 0%, transparent 60%); pointer-events: none; }
+  .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.3; pointer-events: none; }
+  .status-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--orange-soft), transparent); opacity: 0.4; z-index: 100; }
+
+  .topbar { position: sticky; top: 0; z-index: 50; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 14px; }
+  .back-btn { width: 36px; height: 36px; border-radius: 10px; background: transparent; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.2s, color 0.2s; text-decoration: none; flex-shrink: 0; }
+  .back-btn:hover { background: var(--bg-card); color: var(--text-secondary); }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+  .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .topbar-sub { font-size: 12px; color: var(--text-muted); }
+
+  /* Etapas no topo */
+  .etapas-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+  .etapa-tab { flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; position: relative; }
+  .etapa-tab.active { color: var(--orange-soft); border-bottom-color: var(--orange-soft); }
+  .etapa-tab.done { color: #4a9e6a; }
+  .etapa-num { width: 20px; height: 20px; border-radius: 50%; background: var(--bg-input); color: var(--text-muted); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; transition: all 0.2s; }
+  .etapa-tab.active .etapa-num { background: var(--orange-dim); color: var(--orange-soft); }
+  .etapa-tab.done .etapa-num { background: #0d1f0d; color: #4a9e6a; }
+
+  .page-content { flex: 1; position: relative; z-index: 1; }
+
+  /* Etapa 1 — Selecionar membros */
+  .etapa-view { display: none; }
+  .etapa-view.ativa { display: flex; flex-direction: column; height: calc(100vh - 120px); }
+
+  /* Busca */
+  .search-bar { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); position: sticky; top: 0; z-index: 5; }
+  .search-inner { position: relative; }
+  .search-inner svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: var(--text-muted); fill: none; }
+  .search-inner input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 10px 34px; font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text-primary); outline: none; transition: border-color 0.2s; }
+  .search-inner input::placeholder { color: var(--text-muted); }
+  .search-inner input:focus { border-color: var(--orange-soft); }
+
+  /* Selecionados */
+  .selecionados-bar { padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; min-height: 56px; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .selecionados-bar::-webkit-scrollbar { height: 3px; }
+  .selecionados-bar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .sel-placeholder { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .sel-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; cursor: pointer; }
+  .sel-chip-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; position: relative; border: 2px solid var(--orange-soft); }
+  .sel-chip-x { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: #c05050; display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 700; }
+  .sel-chip-name { font-size: 10px; color: var(--text-secondary); max-width: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Lista de contatos */
+  .contatos-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .contatos-list::-webkit-scrollbar { width: 3px; }
+  .contatos-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .contato-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: background 0.15s; }
+  .contato-item:hover { background: var(--bg-card); }
+  .contato-item.selected { background: var(--orange-dim); }
+  .avatar-img { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; border: 1px solid var(--border); flex-shrink: 0; }
+  .c1 { background: #1a0e08; color: #e8874a; }
+  .c2 { background: #081a10; color: #4a9e6a; }
+  .c3 { background: #08101a; color: #4a80c0; }
+  .c4 { background: #1a0814; color: #c04a8a; }
+  .c5 { background: #141a08; color: #8ac04a; }
+  .contato-info { flex: 1; }
+  .contato-nome { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .contato-status { font-size: 12px; color: var(--text-muted); }
+  .check-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+  .contato-item.selected .check-circle { border-color: var(--orange-soft); background: var(--orange-soft); }
+  .check-circle::after { content: '✓'; font-size: 12px; color: transparent; font-weight: 700; transition: color 0.2s; }
+  .contato-item.selected .check-circle::after { color: white; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .status-dot.online { background: var(--green-online); }
+  .status-dot.offline { background: var(--text-muted); }
+
+  .footer-bar { padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-panel); display: flex; align-items: center; gap: 12px; position: sticky; bottom: 0; }
+  .footer-info { flex: 1; font-size: 13px; color: var(--text-secondary); }
+  .footer-count { font-weight: 600; color: var(--orange-soft); }
+  .btn-next { padding: 12px 24px; border-radius: 12px; background: linear-gradient(135deg, #e8874a, #c05820); border: none; color: white; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 14px #e8874a25; }
+  .btn-next:hover { transform: translateY(-1px); }
+  .btn-next:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+  .btn-next svg { width: 14px; height: 14px; stroke: white; fill: none; }
+
+  /* Etapa 2 — Configurar grupo */
+  .grupo-config { padding: 24px 20px; max-width: 500px; margin: 0 auto; width: 100%; }
+  .avatar-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 32px; }
+  .grupo-avatar-wrap { position: relative; cursor: pointer; }
+  .grupo-avatar { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #1a0e08, #120808); border: 2px solid var(--orange-soft); display: flex; align-items: center; justify-content: center; font-size: 32px; transition: transform 0.2s; overflow: hidden; position: relative; }
+  .grupo-avatar:hover { transform: scale(1.04); }
+  .grupo-avatar-overlay { position: absolute; inset: 0; background: #00000080; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+  .grupo-avatar:hover .grupo-avatar-overlay { opacity: 1; }
+  .grupo-avatar-overlay svg { width: 24px; height: 24px; stroke: white; fill: none; }
+  .avatar-hint { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; display: block; }
+  .form-input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 16px; font-family: 'Sora', sans-serif; font-size: 15px; color: var(--text-primary); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .form-input::placeholder { color: var(--text-muted); }
+  .form-input:focus { border-color: var(--orange-soft); box-shadow: 0 0 0 3px var(--orange-dim); }
+  .char-count { font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 4px; }
+
+  .tipo-grupo { display: flex; gap: 10px; }
+  .tipo-opt { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s; background: var(--bg-card); }
+  .tipo-opt:hover { border-color: #3a3530; }
+  .tipo-opt.selected { border-color: var(--orange-soft); background: var(--orange-dim); }
+  .tipo-opt-icon { font-size: 22px; margin-bottom: 6px; }
+  .tipo-opt-label { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .tipo-opt-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .tipo-opt.selected .tipo-opt-desc { color: var(--text-secondary); }
+
+  /* Membros selecionados mini preview */
+  .membros-preview { display: flex; gap: -8px; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .membro-mini { display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px 4px 6px; }
+  .membro-mini-av { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .membro-mini-name { font-size: 12px; color: var(--text-secondary); }
+
+  /* Confirmação final */
+  .confirmacao { padding: 24px 20px; max-width: 500px; margin: 0 auto; width: 100%; }
+  .grupo-card-preview { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .grupo-avatar-sm { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #1a0e08, #120808); border: 2px solid var(--orange-soft); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .grupo-info-preview h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .grupo-info-preview p { font-size: 13px; color: var(--text-muted); }
+  .info-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-row-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .info-row-text h4 { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .info-row-text p { font-size: 12px; color: var(--text-muted); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; font-size: 13px; color: var(--text-primary); box-shadow: 0 12px 40px #00000060; z-index: 200; transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  html.light body { --bg-deep: #f0ece6; --bg-panel: #ffffff; --bg-card: #f5f1eb; --bg-input: #ede9e3; --text-primary: #1a1410; --text-secondary: #6a6058; --text-muted: #a09888; --border: #ddd8d0; }
+
+  @media (max-width: 500px) { .topbar { padding: 14px 16px; } .search-bar, .footer-bar { padding: 12px 16px; } .contato-item { padding: 12px 16px; } .grupo-config, .confirmacao { padding: 20px 16px; } }
+</style>
+<script> if (localStorage.getItem('schat-tema') !== 'dark') document.documentElement.classList.add('light'); </script>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="status-bar"></div>
+
+<div class="topbar">
+  <a href="schat-principal.html" class="back-btn">
+    <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+  <div>
+    <div class="topbar-title">Criar grupo</div>
+    <div class="topbar-sub" id="topbarSub">Selecione os participantes</div>
+  </div>
+</div>
+
+<!-- Barra de etapas -->
+<div class="etapas-bar">
+  <div class="etapa-tab active" id="tab1"><span class="etapa-num" id="tabNum1">1</span>Participantes</div>
+  <div class="etapa-tab" id="tab2"><span class="etapa-num" id="tabNum2">2</span>Configurar</div>
+  <div class="etapa-tab" id="tab3"><span class="etapa-num" id="tabNum3">3</span>Confirmar</div>
+</div>
+
+<div class="page-content">
+
+  <!-- Etapa 1: Selecionar membros -->
+  <div class="etapa-view ativa" id="view1">
+    <div class="search-bar">
+      <div class="search-inner">
+        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke-linecap="round"/></svg>
+        <input type="text" id="searchContatos" placeholder="Buscar contatos..." oninput="filtrarContatos(this.value)">
+      </div>
+    </div>
+    <div class="selecionados-bar" id="selecionadosBar">
+      <span class="sel-placeholder" id="selPlaceholder">Nenhum participante selecionado</span>
+    </div>
+    <div class="contatos-list" id="contatosList">
+      <div class="contato-item" data-nome="Ana Lima" data-iniciais="AL" data-cor="c1" data-status="online" onclick="toggleContato(this)">
+        <div class="avatar-img c1">AL</div>
+        <div class="contato-info">
+          <div class="contato-nome">Ana Lima</div>
+          <div class="contato-status"><span class="status-dot online"></span>Online agora</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+      <div class="contato-item" data-nome="Carlos Souza" data-iniciais="CS" data-cor="c2" data-status="online" onclick="toggleContato(this)">
+        <div class="avatar-img c2">CS</div>
+        <div class="contato-info">
+          <div class="contato-nome">Carlos Souza</div>
+          <div class="contato-status"><span class="status-dot online"></span>Online agora</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+      <div class="contato-item" data-nome="Beatriz Ramos" data-iniciais="BR" data-cor="c4" data-status="online" onclick="toggleContato(this)">
+        <div class="avatar-img c4">BR</div>
+        <div class="contato-info">
+          <div class="contato-nome">Beatriz Ramos</div>
+          <div class="contato-status"><span class="status-dot online"></span>Ausente</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+      <div class="contato-item" data-nome="Diego Martins" data-iniciais="DM" data-cor="c3" data-status="offline" onclick="toggleContato(this)">
+        <div class="avatar-img c3">DM</div>
+        <div class="contato-info">
+          <div class="contato-nome">Diego Martins</div>
+          <div class="contato-status"><span class="status-dot offline"></span>Offline</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+      <div class="contato-item" data-nome="Fernanda Costa" data-iniciais="FC" data-cor="c5" data-status="offline" onclick="toggleContato(this)">
+        <div class="avatar-img c5">FC</div>
+        <div class="contato-info">
+          <div class="contato-nome">Fernanda Costa</div>
+          <div class="contato-status"><span class="status-dot offline"></span>Offline</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+      <div class="contato-item" data-nome="Gustavo Pereira" data-iniciais="GP" data-cor="c2" data-status="offline" onclick="toggleContato(this)">
+        <div class="avatar-img c2">GP</div>
+        <div class="contato-info">
+          <div class="contato-nome">Gustavo Pereira</div>
+          <div class="contato-status"><span class="status-dot offline"></span>Offline</div>
+        </div>
+        <div class="check-circle"></div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <div class="footer-info"><span class="footer-count" id="footerCount">0</span> selecionados (mín. 2)</div>
+      <button class="btn-next" id="btnProximo" onclick="irEtapa2()" disabled>
+        Próximo
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Etapa 2: Configurar grupo -->
+  <div class="etapa-view" id="view2">
+    <div class="grupo-config">
+      <!-- Avatar do grupo -->
+      <div class="avatar-upload">
+        <div class="grupo-avatar-wrap" onclick="trocarEmoji()">
+          <div class="grupo-avatar" id="grupoAvatar">
+            🌟
+            <div class="grupo-avatar-overlay">
+              <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke-linecap="round"/><circle cx="12" cy="13" r="4" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="avatar-hint">Clique para trocar o ícone</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nome do grupo</label>
+        <input type="text" class="form-input" id="nomeGrupo" placeholder="Ex: Família, Trabalho, Amigos..." maxlength="40" oninput="atualizarCharCount()">
+        <div class="char-count"><span id="charCount">0</span>/40</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+        <input type="text" class="form-input" id="descGrupo" placeholder="Sobre este grupo...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo do grupo</label>
+        <div class="tipo-grupo">
+          <div class="tipo-opt selected" id="tipoPublico" onclick="setTipo('publico')">
+            <div class="tipo-opt-icon">🌐</div>
+            <div class="tipo-opt-label">Público</div>
+            <div class="tipo-opt-desc">Qualquer contato pode entrar</div>
+          </div>
+          <div class="tipo-opt" id="tipoPrivado" onclick="setTipo('privado')">
+            <div class="tipo-opt-icon">🔒</div>
+            <div class="tipo-opt-label">Privado</div>
+            <div class="tipo-opt-desc">Somente por convite</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Participantes selecionados</label>
+        <div class="membros-preview" id="membrosPreview"></div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <button class="btn-next" style="background:var(--bg-card);color:var(--text-secondary);box-shadow:none;border:1px solid var(--border)" onclick="voltarEtapa1()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round"/></svg>
+        Voltar
+      </button>
+      <button class="btn-next" id="btnProximo2" onclick="irEtapa3()">
+        Revisar
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="9,18 15,12 9,6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Etapa 3: Confirmar e criar -->
+  <div class="etapa-view" id="view3">
+    <div class="confirmacao">
+      <div class="grupo-card-preview">
+        <div class="grupo-avatar-sm" id="prevAvatar">🌟</div>
+        <div class="grupo-info-preview">
+          <h3 id="prevNome">—</h3>
+          <p id="prevMembros">0 participantes</p>
+        </div>
+      </div>
+
+      <div id="prevInfos">
+        <div class="info-row">
+          <div class="info-row-icon">🏷️</div>
+          <div class="info-row-text">
+            <h4>Nome</h4>
+            <p id="prevNome2">—</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-icon">📝</div>
+          <div class="info-row-text">
+            <h4>Descrição</h4>
+            <p id="prevDesc">Sem descrição</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-icon" id="prevTipoIcon">🌐</div>
+          <div class="info-row-text">
+            <h4>Tipo</h4>
+            <p id="prevTipo">Público</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-row-icon">👥</div>
+          <div class="info-row-text">
+            <h4>Participantes</h4>
+            <p id="prevListaMembros">—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <button class="btn-next" style="background:var(--bg-card);color:var(--text-secondary);box-shadow:none;border:1px solid var(--border)" onclick="voltarEtapa2()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15,18 9,12 15,6" stroke-linecap="round"/></svg>
+        Voltar
+      </button>
+      <button class="btn-next" id="btnCriar" onclick="criarGrupo()">
+        🎉 Criar grupo
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selecionados = [];
+  let tipoGrupo = 'publico';
+  const emojis = ['🌟','🎯','🎮','🏆','💬','🎵','🌈','⚡','🚀','🎨','🌿','💡','🔥','❤️','🐉','🦋'];
+  let emojiIdx = 0;
+
+  function mostrarToast(msg, cor) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.borderColor = cor||'';
+    t.classList.add('show'); clearTimeout(t._t);
+    t._t = setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  function toggleContato(el) {
+    const nome = el.dataset.nome;
+    const iniciais = el.dataset.iniciais;
+    const cor = el.dataset.cor;
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) {
+      selecionados.push({ nome, iniciais, cor });
+    } else {
+      selecionados = selecionados.filter(s => s.nome !== nome);
+    }
+    atualizarSelecionados();
+  }
+
+  function atualizarSelecionados() {
+    const bar = document.getElementById('selecionadosBar');
+    const placeholder = document.getElementById('selPlaceholder');
+    const count = document.getElementById('footerCount');
+    const btn = document.getElementById('btnProximo');
+    count.textContent = selecionados.length;
+    btn.disabled = selecionados.length < 2;
+    if (selecionados.length === 0) {
+      placeholder.style.display = '';
+      const chips = bar.querySelectorAll('.sel-chip');
+      chips.forEach(c => c.remove());
+    } else {
+      placeholder.style.display = 'none';
+      bar.querySelectorAll('.sel-chip').forEach(c => c.remove());
+      selecionados.forEach(s => {
+        const chip = document.createElement('div');
+        chip.className = 'sel-chip';
+        chip.onclick = () => {
+          const item = document.querySelector(`.contato-item[data-nome="${s.nome}"]`);
+          if (item) { item.classList.remove('selected'); selecionados = selecionados.filter(x => x.nome !== s.nome); atualizarSelecionados(); }
+        };
+        chip.innerHTML = `<div class="sel-chip-avatar ${s.cor}">${s.iniciais}<span class="sel-chip-x">×</span></div><div class="sel-chip-name">${s.nome.split(' ')[0]}</div>`;
+        bar.appendChild(chip);
+      });
+    }
+  }
+
+  function filtrarContatos(termo) {
+    document.querySelectorAll('.contato-item').forEach(el => {
+      el.style.display = el.dataset.nome.toLowerCase().includes(termo.toLowerCase()) ? '' : 'none';
+    });
+  }
+
+  function irEtapa2() {
+    document.getElementById('view1').classList.remove('ativa');
+    document.getElementById('view2').classList.add('ativa');
+    document.getElementById('tab1').classList.remove('active'); document.getElementById('tab1').classList.add('done'); document.getElementById('tabNum1').textContent = '✓';
+    document.getElementById('tab2').classList.add('active');
+    document.getElementById('topbarSub').textContent = 'Configure seu grupo';
+    atualizarMembrosPreview();
+  }
+
+  function voltarEtapa1() {
+    document.getElementById('view2').classList.remove('ativa');
+    document.getElementById('view1').classList.add('ativa');
+    document.getElementById('tab1').classList.remove('done'); document.getElementById('tab1').classList.add('active'); document.getElementById('tabNum1').textContent = '1';
+    document.getElementById('tab2').classList.remove('active');
+    document.getElementById('topbarSub').textContent = 'Selecione os participantes';
+  }
+
+  function irEtapa3() {
+    const nome = document.getElementById('nomeGrupo').value.trim();
+    if (!nome) { mostrarToast('⚠️ Informe o nome do grupo', '#c05050'); document.getElementById('nomeGrupo').focus(); return; }
+    document.getElementById('view2').classList.remove('ativa');
+    document.getElementById('view3').classList.add('ativa');
+    document.getElementById('tab2').classList.remove('active'); document.getElementById('tab2').classList.add('done'); document.getElementById('tabNum2').textContent = '✓';
+    document.getElementById('tab3').classList.add('active');
+    document.getElementById('topbarSub').textContent = 'Confirmar criação';
+    preencherResumo();
+  }
+
+  function voltarEtapa2() {
+    document.getElementById('view3').classList.remove('ativa');
+    document.getElementById('view2').classList.add('ativa');
+    document.getElementById('tab2').classList.remove('done'); document.getElementById('tab2').classList.add('active'); document.getElementById('tabNum2').textContent = '2';
+    document.getElementById('tab3').classList.remove('active');
+    document.getElementById('topbarSub').textContent = 'Configure seu grupo';
+  }
+
+  function atualizarMembrosPreview() {
+    const cont = document.getElementById('membrosPreview');
+    cont.innerHTML = '';
+    selecionados.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'membro-mini';
+      el.innerHTML = `<div class="membro-mini-av ${s.cor}">${s.iniciais}</div><div class="membro-mini-name">${s.nome.split(' ')[0]}</div>`;
+      cont.appendChild(el);
+    });
+  }
+
+  function atualizarCharCount() {
+    const v = document.getElementById('nomeGrupo').value.length;
+    document.getElementById('charCount').textContent = v;
+  }
+
+  function setTipo(tipo) {
+    tipoGrupo = tipo;
+    document.getElementById('tipoPublico').classList.toggle('selected', tipo === 'publico');
+    document.getElementById('tipoPrivado').classList.toggle('selected', tipo === 'privado');
+  }
+
+  function trocarEmoji() {
+    emojiIdx = (emojiIdx + 1) % emojis.length;
+    document.getElementById('grupoAvatar').textContent = emojis[emojiIdx];
+    document.getElementById('grupoAvatar').insertAdjacentHTML('beforeend', '<div class="grupo-avatar-overlay"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke-linecap="round"/><circle cx="12" cy="13" r="4" stroke-linecap="round"/></svg></div>');
+  }
+
+  function preencherResumo() {
+    const nome = document.getElementById('nomeGrupo').value.trim();
+    const desc = document.getElementById('descGrupo').value.trim();
+    const emoji = emojis[emojiIdx];
+    document.getElementById('prevAvatar').textContent = emoji;
+    document.getElementById('prevNome').textContent = nome;
+    document.getElementById('prevNome2').textContent = nome;
+    document.getElementById('prevMembros').textContent = (selecionados.length + 1) + ' participantes (você + ' + selecionados.length + ')';
+    document.getElementById('prevDesc').textContent = desc || 'Sem descrição';
+    document.getElementById('prevTipo').textContent = tipoGrupo === 'publico' ? 'Público — qualquer contato pode entrar' : 'Privado — somente por convite';
+    document.getElementById('prevTipoIcon').textContent = tipoGrupo === 'publico' ? '🌐' : '🔒';
+    document.getElementById('prevListaMembros').textContent = 'Você, ' + selecionados.map(s => s.nome).join(', ');
+  }
+
+  function criarGrupo() {
+    const btn = document.getElementById('btnCriar');
+    btn.textContent = 'Criando...'; btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ Grupo criado!';
+      btn.style.background = 'linear-gradient(135deg, #4a9e6a, #2d7a50)';
+      document.getElementById('tabNum3').textContent = '✓';
+      document.getElementById('tab3').classList.add('done');
+      mostrarToast('🎉 Grupo criado com sucesso!', '#4a9e6a');
+      setTimeout(() => window.location.href = 'schat-principal.html', 1500);
+    }, 1500);
+  }
+</script>
+</body>
+</html>

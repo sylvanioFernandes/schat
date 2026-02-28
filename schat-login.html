@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-Chat — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a0a;
+    --bg-panel: #111111;
+    --bg-card: #181818;
+    --bg-input: #1e1e1e;
+    --orange-soft: #e8874a;
+    --orange-dim: #a0522840;
+    --text-primary: #f0ece6;
+    --text-secondary: #8a8178;
+    --text-muted: #4a4540;
+    --border: #242220;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, #1a0d0520 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 10% 80%, #150a0215 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .glow-center {
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #e8874a08 0%, transparent 70%);
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  }
+
+  .login-wrapper {
+    position: relative; z-index: 10;
+    display: flex;
+    align-items: stretch;
+    width: 860px;
+    max-width: calc(100vw - 32px);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    box-shadow: 0 0 0 1px #ffffff05, 0 40px 80px #00000060, 0 0 60px #e8874a08;
+    overflow: hidden;
+    animation: appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    margin: 16px;
+  }
+
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Painel esquerdo — só desktop */
+  .left-panel {
+    width: 300px; flex-shrink: 0;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 32px;
+    position: relative; overflow: hidden;
+  }
+
+  .left-panel::before {
+    content: '';
+    position: absolute; bottom: -80px; left: -80px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, #e8874a12 0%, transparent 70%);
+  }
+
+  .logo-mark {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg, #e8874a, #c05820);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px #e8874a25, 0 0 0 1px #e8874a20;
+    animation: logo-float 3s ease-in-out infinite;
+  }
+
+  @keyframes logo-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .logo-mark svg { width: 36px; height: 36px; fill: white; }
+
+  .brand-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .brand-name span { color: var(--orange-soft); }
+
+  .brand-tagline {
+    font-size: 13px; color: var(--text-secondary);
+    text-align: center; line-height: 1.6; font-weight: 300;
+  }
+
+  .divider-dots { display: flex; gap: 6px; margin-top: 28px; }
+  .divider-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); }
+  .divider-dots span:nth-child(2) { background: var(--orange-soft); opacity: 0.6; }
+
+  /* Cabeçalho mobile */
+  .mobile-header {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px 28px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-header .logo-mark {
+    width: 60px; height: 60px; border-radius: 17px; margin-bottom: 14px;
+  }
+  .mobile-header .logo-mark svg { width: 30px; height: 30px; }
+  .mobile-header .brand-name { font-size: 22px; margin-bottom: 5px; }
+  .mobile-header .brand-tagline { font-size: 12px; }
+
+  /* Painel direito */
+  .right-panel {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 52px 44px;
+  }
+
+  .form-header { margin-bottom: 32px; }
+  .form-header h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 5px; }
+  .form-header p { font-size: 13px; color: var(--text-secondary); font-weight: 300; }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block; font-size: 11px; font-weight: 500;
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap svg {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    stroke: var(--text-muted); fill: none;
+    transition: stroke 0.2s; pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 14px 14px 42px;
+    font-family: 'Sora', sans-serif;
+    font-size: 15px; color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder { color: var(--text-muted); }
+  input:focus { border-color: var(--orange-soft); box-shadow: 0 0 0 3px var(--orange-dim); }
+
+  .form-options {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    margin-bottom: 28px; margin-top: 4px;
+  }
+
+  .checkbox-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-secondary);
+    cursor: pointer; user-select: none;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 17px; height: 17px; padding: 0;
+    accent-color: var(--orange-soft); cursor: pointer;
+  }
+
+  .forgot-link {
+    font-size: 13px; color: var(--orange-soft);
+    text-decoration: none; opacity: 0.8; transition: opacity 0.2s;
+  }
+  .forgot-link:hover { opacity: 1; }
+
+  .btn-login {
+    width: 100%; padding: 15px; border: none;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, #e8874a, #c05820);
+    color: white; font-family: 'Sora', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px #e8874a25;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-login::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, #ffffff15, transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+
+  .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 28px #e8874a35; }
+  .btn-login:hover::before { opacity: 1; }
+  .btn-login:active { transform: scale(0.98); }
+
+  .register-line {
+    text-align: center; margin-top: 20px;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .register-line a { color: var(--orange-soft); text-decoration: none; font-weight: 500; }
+
+  .status-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--orange-soft), transparent);
+    opacity: 0.4;
+  }
+
+  .version-tag {
+    position: fixed; bottom: 14px; right: 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--text-muted); opacity: 0.4;
+  }
+
+  /* ===== RESPONSIVO ===== */
+  @media (max-width: 640px) {
+    body { align-items: flex-start; }
+
+    .login-wrapper {
+      flex-direction: column;
+      width: 100%; max-width: 100%;
+      border-radius: 0; border: none;
+      margin: 0; min-height: 100vh;
+    }
+
+    .left-panel { display: none; }
+    .mobile-header { display: flex; }
+
+    .right-panel { padding: 28px 24px 48px; justify-content: flex-start; }
+    .form-header { margin-bottom: 24px; }
+    .form-header h2 { font-size: 20px; }
+    input { font-size: 16px; padding: 15px 14px 15px 42px; }
+    .btn-login { padding: 16px; font-size: 16px; }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    .login-wrapper { width: calc(100vw - 48px); }
+    .left-panel { width: 230px; padding: 36px 24px; }
+    .right-panel { padding: 40px 32px; }
+    .brand-name { font-size: 21px; }
+  }
+
+  /* TEMA CLARO */
+  html.light body {
+    --bg-deep: #f0ece6;
+    --bg-panel: #ffffff;
+    --bg-card: #f5f1eb;
+    --bg-input: #ede9e3;
+    --text-primary: #1a1410;
+    --text-secondary: #6a6058;
+    --text-muted: #a09888;
+    --border: #ddd8d0;
+  }
+  body.light {
+    --bg-deep: #f0ece6;
+    --bg-panel: #ffffff;
+    --bg-card: #f5f1eb;
+    --bg-input: #ede9e3;
+    --text-primary: #1a1410;
+    --text-secondary: #6a6058;
+    --text-muted: #a09888;
+    --border: #ddd8d0;
+  }
+  body.light::before { opacity: 0; }
+  body { transition: background 0.3s, color 0.3s; }
+</style>
+<script>
+  // Aplicar tema ANTES de renderizar (evita flash)
+  if (localStorage.getItem('schat-tema') !== 'dark')
+    document.documentElement.classList.add('light');
+</script>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="glow-center"></div>
+<div class="status-bar"></div>
+
+<div class="login-wrapper">
+
+  <!-- Cabeçalho mobile -->
+  <div class="mobile-header">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"/><path d="M7 9H17V11H7V9ZM7 12H14V14H7V12ZM7 6H17V8H7V6Z" opacity="0.6"/></svg>
+    </div>
+    <div class="brand-name">S<span>-</span>Chat</div>
+    <div class="brand-tagline">Conecte-se com quem importa.</div>
+  </div>
+
+  <!-- Painel esquerdo — desktop -->
+  <div class="left-panel">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"/><path d="M7 9H17V11H7V9ZM7 12H14V14H7V12ZM7 6H17V8H7V6Z" opacity="0.6"/></svg>
+    </div>
+    <div class="brand-name">S<span>-</span>Chat</div>
+    <div class="brand-tagline">Conecte-se com quem importa.<br>Rápido, simples e seguro.</div>
+    <div class="divider-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <!-- Formulário -->
+  <div class="right-panel">
+    <div class="form-header">
+      <h2>Bem-vindo de volta</h2>
+      <p>Entre com sua conta para continuar</p>
+    </div>
+
+    <div class="form-group">
+      <label for="email">E-mail ou usuário</label>
+      <div class="input-wrap">
+        <input type="text" id="email" placeholder="seu@email.com" autocomplete="off">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22,6 12,13 2,6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="senha">Senha</label>
+      <div class="input-wrap">
+        <input type="password" id="senha" placeholder="••••••••">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11V7C7 4.24 9.24 2 12 2C14.76 2 17 4.24 17 7V11" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="form-options">
+      <label class="checkbox-label">
+        <input type="checkbox" checked> Manter conectado
+      </label>
+      <a href="schat-recuperar-senha.html" class="forgot-link">Esqueci minha senha</a>
+    </div>
+
+    <button class="btn-login" onclick="entrar()">Entrar no S-Chat</button>
+
+    <div class="register-line">
+      Ainda não tem conta? <a href="schat-cadastro.html">Criar conta grátis</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="version-tag">S-Chat v0.1 — dev</div>
+
+<script>
+  function entrar() {
+    const btn = document.querySelector('.btn-login');
+    btn.textContent = 'Entrando...';
+    btn.style.opacity = '0.7';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✓ Conectado';
+      setTimeout(() => { window.location.href = 'schat-principal.html'; }, 600);
+      btn.style.background = 'linear-gradient(135deg, #4a9e6a, #2d7a50)';
+      btn.style.opacity = '1';
+    }, 1500);
+  }
+  document.getElementById('email').focus();
+</script>
+
+</body>
+</html>
